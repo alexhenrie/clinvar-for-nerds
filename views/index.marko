@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html class="tall" style="height:100%">
+  <head>
+    <meta charset="utf-8">
+    <title>ClinVar for Nerds</title>
+    <style>
+      .tall {
+        display: flex;
+        flex-direction: column;
+        flex-grow: 1;
+      }
+
+      .space-kids > * {
+        margin-right: 1em;
+      }
+    </style>
+  </head>
+  <body class="tall">
+    <datalist id="clinvarProperties">
+      <option for="property in data.properties">${property}</option>
+    </datalist>
+    <div class="tall" id="application">This application requires JavaScript.</div>
+    <script src="/dist/main.js" async></script>
+  </body>
+</html>
