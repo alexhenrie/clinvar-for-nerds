@@ -56,6 +56,8 @@ function moveAttributes(item) {
   });
 }
 
+var startTime = Date.now();
+
 console.log('Purging database...');
 ClinVarSet.remove();
 
@@ -84,5 +86,6 @@ xmlStream.on('endElement: ClinVarSet', function(item) {
 xmlStream.on('endElement: ReleaseSet', function() {
   console.log(); //move down from the status line
   console.log('Successfully rebuilt Mongo clinvar_nerds database.');
+  console.log('Time taken: ' + ((Date.now() - startTime) / 60000).toFixed() + ' minutes');
   process.exit(0);
 });
