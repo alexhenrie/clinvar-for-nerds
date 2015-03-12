@@ -1,0 +1,4 @@
+dist/
+node_modules/
+ClinVarFullRelease_00-latest.xml
+clinvar_public.xsd

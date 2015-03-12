@@ -1,0 +1,27 @@
+{
+  "name": "clinvar-for-nerds",
+  "version": "1.0.0",
+  "description": "Web-based ClinVar search tool",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/alexhenrie/clinvar-visualization.git"
+  },
+  "author": "Alex Henrie",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/alexhenrie/clinvar-visualization/issues"
+  },
+  "homepage": "https://github.com/alexhenrie/clinvar-visualization",
+  "dependencies": {
+    "csv-stringify": "0.0.6",
+    "express": "^4.12.0",
+    "mongoose": "^3.8.24",
+    "xml-stream": "^0.4.5",
+    "xmldom": "^0.1.19",
+    "xpath": "0.0.9"
+  }
+}
