@@ -31,16 +31,10 @@ module.exports = React.createClass({
           $options: 'i',
         };
       } else if (q[property].$text) {
-        if (caseSensitive) {
-          q[property] = {
-            $text: {'$search': q[property].$text}
-          };
-        } else { //not case sensitive
-          q[property] = {
-            $regex: escapeRE(q[property].$text),
-            $options: 'i',
-          };
-        }
+        q[property] = {
+          $regex: escapeRE(q[property].$text),
+          $options: caseSensitive ? undefined : 'i',
+        };
       }
     });
     var url = '/api?q=' + JSON.stringify(q) + '&format=' + props.query.format;
