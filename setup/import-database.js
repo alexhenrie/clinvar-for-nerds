@@ -4,10 +4,8 @@ var fs = require('fs');
 var clinvarCollects = require('../models/clinvar-collects');
 var clinvarSchema = require('../models/clinvar-schema');
 var ClinVarSet = require('../models/clinvarset');
+var MongoClient = require('mongodb').MongoClient;
 var XmlStream = require('xml-stream');
-
-var fileStream = fs.createReadStream('ClinVarFullRelease_00-latest.xml');
-var xmlStream = new XmlStream(fileStream);
 
 var nameStack = [];
 
@@ -58,34 +56,48 @@ function moveAttributes(item) {
 
 var startTime = Date.now();
 
-console.log('Purging database...');
-ClinVarSet.remove();
-
-Object.keys(clinvarCollects).forEach(function(tagName) {
-  xmlStream.collect(tagName);
-});
-
-var count = 0;
-console.log('Adding ClinVarSet elements (approximately 150,000 of them)...');
-xmlStream.on('endElement: ClinVarSet', function(item) {
-  moveAttributes(item);
-  var clinVarSet = new ClinVarSet(item);
-  clinVarSet.save(function(err) {
+/* The database will increase in size by several gigabytes every time it is
+   rebuilt unless it is dropped before rebuilding. Mongo's repairDatabase
+   function would probably also work, but it requires more free disk space than
+   I have. */
+MongoClient.connect('mongodb://localhost:27017/clinvar_nerds', function(err, db) {
+  console.log('Dropping database...');
+  db.dropDatabase(function(err) {
     if (err) {
-      console.log('item = ' + JSON.stringify(item, null, 2));
       console.log(err);
-      process.exit(1);
+      process.exit(0);
+    } else {
+      var fileStream = fs.createReadStream('ClinVarFullRelease_00-latest.xml');
+      var xmlStream = new XmlStream(fileStream);
+
+      Object.keys(clinvarCollects).forEach(function(tagName) {
+        xmlStream.collect(tagName);
+      });
+
+      var count = 0;
+      console.log('Adding ClinVarSet elements (approximately 150,000 of them)...');
+      xmlStream.on('endElement: ClinVarSet', function(item) {
+        moveAttributes(item);
+        var clinVarSet = new ClinVarSet(item);
+        clinVarSet.save(function(err) {
+          if (err) {
+            console.log('item = ' + JSON.stringify(item, null, 2));
+            console.log(err);
+            process.exit(1);
+          }
+        });
+        count++;
+        process.stdout.clearLine();
+        process.stdout.cursorTo(0);
+        process.stdout.write(String(count));
+      });
+
+      xmlStream.on('endElement: ReleaseSet', function() {
+        console.log(); //move down from the status line
+        console.log('Successfully rebuilt Mongo clinvar_nerds database.');
+        console.log('Time taken: ' + ((Date.now() - startTime) / 60000).toFixed() + ' minutes');
+        process.exit(0);
+      });
     }
   });
-  count++;
-  process.stdout.clearLine();
-  process.stdout.cursorTo(0);
-  process.stdout.write(String(count));
-});
-
-xmlStream.on('endElement: ReleaseSet', function() {
-  console.log(); //move down from the status line
-  console.log('Successfully rebuilt Mongo clinvar_nerds database.');
-  console.log('Time taken: ' + ((Date.now() - startTime) / 60000).toFixed() + ' minutes');
-  process.exit(0);
 });
