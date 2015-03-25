@@ -48,11 +48,10 @@ module.exports = React.createClass({
       url += '&strip=1';
 
     request.get(url, function(error, result) {
-      if (error) {
-        console.log(error);
-        return;
-      }
-      this.setState({loading: false, results: result.text});
+      if (result.text)
+        this.setState({loading: false, results: result.text});
+      else
+        this.setState({loading: false, results: error});
     }.bind(this));
   },
   render: function() {

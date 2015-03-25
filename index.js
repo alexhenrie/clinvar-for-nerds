@@ -70,7 +70,7 @@ app.get('/api', function(req, res) {
   ClinVarSet.find(JSON.parse(req.query.q), function(err, doc) {
     if (err) {
       res.status(400); //bad request
-      res.send(err);
+      res.send(err.toString());
       return;
     }
 
