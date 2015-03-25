@@ -17,8 +17,7 @@ function shouldBeObject(item) {
   nameStack.forEach(function(name) {
     correctType = correctType[name];
   });
-  if (correctType instanceof Object)
-    return true;
+  return (correctType instanceof Object);
 }
 
 /**
