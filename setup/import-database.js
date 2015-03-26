@@ -40,8 +40,7 @@ function moveAttributes(item) {
       });
       delete item.$;
     } else if (key1.charAt(0) == '$') {
-      var truncatedName = item[key1.substr(1)];
-      item[truncatedName] = item[key1];
+      item[key1.substr(1)] = item[key1];
       delete item[key1];
     } else if (item[key1] instanceof Object) {
       moveAttributes(item[key1]);
