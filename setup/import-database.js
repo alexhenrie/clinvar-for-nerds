@@ -17,7 +17,7 @@ function shouldBeObject(item) {
   nameStack.forEach(function(name) {
     correctType = correctType[name];
   });
-  return (correctType instanceof Object);
+  return (typeof(correctType) == 'object');
 }
 
 /**
@@ -79,6 +79,7 @@ MongoClient.connect('mongodb://localhost:27017/clinvar_nerds', function(err, db)
         var clinVarSet = new ClinVarSet(item);
         clinVarSet.save(function(err) {
           if (err) {
+            console.log(); //move down from the status line
             console.log('item = ' + JSON.stringify(item, null, 2));
             console.log(err);
             process.exit(1);
