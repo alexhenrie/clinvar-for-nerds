@@ -13,7 +13,10 @@ var usedCount = 0;
 var totalCount = 0;
 
 function queryForExamples(propertyName, arrayDepth, callback) {
+  var matchQuery = {};
+  matchQuery[propertyName] = {$exists: 1};
   var aggregate = ClinVarSet.aggregate()
+    .match(matchQuery)
     .group({_id: '$' + propertyName});
   for (var i = 0; i < arrayDepth; i++)
     aggregate.unwind('_id');
