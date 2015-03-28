@@ -191,30 +191,14 @@ function jsonify(obj, varName, indentation) {
 
 var elementsToCollect = {};
 
+console.log('Generating schema...');
 var schema = buildType(select('//xs:element[@name="ClinVarSet"]', doc)[0], elementsToCollect);
-
-var properties = [];
-function listProperties(schema, prefix) {
-  Object.keys(schema).forEach(function(key) {
-    if (Array.isArray(schema)) {
-      listProperties(schema[key], prefix);
-    } else if (typeof(schema[key]) == 'object') {
-      listProperties(schema[key], prefix + key + '.');
-    } else {
-      properties.push(prefix + key);
-    }
-  });
-}
-listProperties(schema, '');
 
 fs.writeFileSync('models/clinvar-schema.js',
   'module.exports = ' + jsonify(schema) + ';');
 
 fs.writeFileSync('models/clinvar-collects.js',
   'module.exports = ' + JSON.stringify(elementsToCollect, null, 2) + ';');
-
-fs.writeFileSync('models/clinvar-properties.js',
-  'module.exports = ' + JSON.stringify(properties, null, 2) + ';');
 
 fs.writeFileSync('models/clinvarset.js',
   'var mongoose = require("./sources/mongoose");\n' +

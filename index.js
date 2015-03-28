@@ -124,8 +124,13 @@ app.get('/api', function(req, res) {
 });
 
 app.get('/', function(req, res) {
-  var clinvarProperties = require('./models/clinvar-properties.js');
-  Marko.load(require.resolve('./views/index.marko')).render({properties: clinvarProperties}, res);
+  var exampleProperties = require('./models/clinvar-examples.js');
+  Object.keys(exampleProperties).forEach(function(key) {
+    exampleProperties[key] = exampleProperties[key].map(function(value) {
+      return JSON.stringify(value);
+    }).join(', ');
+  });
+  Marko.load(require.resolve('./views/index.marko')).render({exampleProperties: exampleProperties}, res);
 });
 
 app.use(express.static(__dirname + '/assets'));

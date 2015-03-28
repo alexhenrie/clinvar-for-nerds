@@ -17,7 +17,7 @@
   </head>
   <body class="tall">
     <datalist id="clinvarProperties">
-      <option for="property in data.properties">${property}</option>
+      <option for="(name,value) in data.exampleProperties" value="$name">${name} ${'(e.g. ' + value + ')'}</option>
     </datalist>
     <div class="tall" id="application">This application requires JavaScript.</div>
     <script src="/dist/main.js" async></script>

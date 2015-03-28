@@ -5,8 +5,6 @@ var Router = require('react-router');
 var Navigation = Router.Navigation;
 var RouteHandler = Router.RouteHandler;
 
-var clinvarProperties = require('../../models/clinvar-properties.js');
-
 module.exports = React.createClass({
   addRestriction : function() {
     this.refs.inputGroup.addRestriction();
