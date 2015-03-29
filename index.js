@@ -123,14 +123,15 @@ app.get('/api', function(req, res) {
   });
 });
 
+var exampleProperties = require('./models/clinvar-examples.js');
+Object.keys(exampleProperties).forEach(function(key) {
+  exampleProperties[key] = exampleProperties[key].map(function(value) {
+    return JSON.stringify(value);
+  }).join(', ');
+});
+
 app.get('/', function(req, res) {
-  var exampleProperties = require('./models/clinvar-examples.js');
-  Object.keys(exampleProperties).forEach(function(key) {
-    exampleProperties[key] = exampleProperties[key].map(function(value) {
-      return JSON.stringify(value);
-    }).join(', ');
-  });
-  Marko.load(require.resolve('./views/index.marko')).render({exampleProperties: exampleProperties}, res);
+  Marko.load(require.resolve(__dirname + '/views/index.marko')).render({exampleProperties: exampleProperties}, res);
 });
 
 app.use(express.static(__dirname + '/assets'));
