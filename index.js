@@ -5,6 +5,7 @@ var app = express();
 var ClinVarSet = require('./models/clinvarset.js');
 var csvStringify = require('csv-stringify');
 var Marko = require('marko');
+var mongoose = require('./models/sources/mongoose');
 
 /**
  * Removes properties added by Mongo
@@ -67,6 +68,10 @@ function flatten(obj, ret, prefix) {
 app.set('json spaces', 2);
 
 app.get('/api', function(req, res) {
+  mongoose.disconnect();
+  mongoose.connect('mongodb://localhost/clinvar_nerds', {
+    server: {socketOptions: {socketTimeoutMS: 20000}}
+  });
   ClinVarSet.find(JSON.parse(req.query.q), function(err, doc) {
     if (err) {
       res.status(400); //bad request
