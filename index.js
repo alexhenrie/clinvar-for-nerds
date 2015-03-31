@@ -5,7 +5,7 @@ var app = express();
 var ClinVarSet = require('./models/clinvarset.js');
 var csvStringify = require('csv-stringify');
 var Marko = require('marko');
-var mongoose = require('./models/sources/mongoose');
+var MongoClient = require('mongodb').MongoClient;
 
 /**
  * Removes properties added by Mongo
@@ -67,64 +67,66 @@ function flatten(obj, ret, prefix) {
 
 app.set('json spaces', 2);
 
-app.get('/api', function(req, res) {
-  mongoose.disconnect();
-  mongoose.connect('mongodb://localhost/clinvar_nerds', {
-    server: {socketOptions: {socketTimeoutMS: 20000}}
-  });
-  ClinVarSet.find(JSON.parse(req.query.q), function(err, doc) {
-    if (err) {
-      res.status(400); //bad request
-      res.send(err.toString());
-      return;
-    }
-
-    //remove Mongoose metadata
-    doc = doc.map(function(set) {
-      return set.toObject();
-    });
-    stripMongo(doc);
-
-    //remove empty objects if requested
-    if (req.query.strip)
-      stripEmpty(doc);
-
-    if (!req.query.format || req.query.format == 'json') {
-      res.json(doc);
-    } else {
-      //create a master list of headers
-      var properties = [];
-      for (var i = 0; i < doc.length; i++)
-        listProperties(doc[i], properties, '');
-      properties.sort();
-
-      //transform each ClinVarSet into a flat object
-      var flatSets = doc.map(function(set) {
-        var flatSet = {};
-        flatten(set, flatSet, '');
-        return flatSet;
-      })
-
-      //output each ClinVarSet as a row aligned to the master headers
-      rows = [[]];
-      properties.forEach(function(property) {
-        rows[0].push(property);
-      });
-      flatSets.forEach(function(flatSet) {
-        row = [];
-        properties.forEach(function(property) {
-          row.push(flatSet[property] || '');
-        });
-        rows.push(row);
-      });
-      csvStringify(rows, function(err, output) {
+MongoClient.connect('mongodb://localhost:27017/clinvar_nerds', function(err, db) {
+  if (err) {
+    console.log(err);
+    return;
+  }
+  app.get('/api', function(req, res) {
+    db.collection('clinvarsets')
+      .find(JSON.parse(req.query.q))
+      .maxTimeMS(100)
+      .toArray(function(err, docs) {
         if (err) {
-          console.log(err);
+          res.status(400); //bad request
+          res.send(err.toString());
           return;
         }
-        res.send(output);
+
+        //remove Mongo metadata
+        stripMongo(docs);
+
+        //remove empty objects if requested
+        if (req.query.strip)
+          stripEmpty(docs);
+
+        if (!req.query.format || req.query.format == 'json') {
+          res.json(docs);
+        } else {
+          //create a master list of headers
+          var properties = [];
+          for (var i = 0; i < docs.length; i++)
+            listProperties(docs[i], properties, '');
+          properties.sort();
+
+          //transform each ClinVarSet into a flat object
+          var flatSets = docs.map(function(set) {
+            var flatSet = {};
+            flatten(set, flatSet, '');
+            return flatSet;
+          })
+
+          //output each ClinVarSet as a row aligned to the master headers
+          rows = [[]];
+          properties.forEach(function(property) {
+            rows[0].push(property);
+          });
+          flatSets.forEach(function(flatSet) {
+            row = [];
+            properties.forEach(function(property) {
+              row.push(flatSet[property] || '');
+            });
+            rows.push(row);
+          });
+          csvStringify(rows, function(err, output) {
+            if (err) {
+              console.log(err);
+              return;
+            }
+            res.send(output);
+          });
+        }
       });
-    }
   });
 });
 

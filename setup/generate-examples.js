@@ -1,6 +1,6 @@
 #!/usr/bin/node
 
-const async = require("async");
+const async = require('async');
 const fs = require('fs');
 
 var clinvarSchema = require('../models/clinvar-schema');
