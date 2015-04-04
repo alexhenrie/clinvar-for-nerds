@@ -22,7 +22,7 @@ function queryForExamples(propertyName, arrayDepth, callback) {
     aggregate.unwind('_id');
   aggregate
     .group({_id: '$_id'})
-    .limit(3)
+    .limit(10)
     .exec(function(err, values) {
       if (err) {
         console.log(err);

@@ -130,15 +130,8 @@ MongoClient.connect('mongodb://localhost:27017/clinvar_nerds', function(err, db)
   });
 });
 
-var exampleProperties = require('./models/clinvar-examples.js');
-Object.keys(exampleProperties).forEach(function(key) {
-  exampleProperties[key] = exampleProperties[key].map(function(value) {
-    return JSON.stringify(value);
-  }).join(', ');
-});
-
 app.get('/', function(req, res) {
-  Marko.load(require.resolve(__dirname + '/views/index.marko')).render({exampleProperties: exampleProperties}, res);
+  Marko.load(require.resolve(__dirname + '/views/index.marko')).render({}, res);
 });
 
 app.use(express.static(__dirname + '/assets'));
