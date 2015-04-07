@@ -67,15 +67,14 @@ function flatten(obj, ret, prefix) {
 
 app.set('json spaces', 2);
 
-MongoClient.connect('mongodb://localhost:27017/clinvar_nerds', function(err, db) {
-  if (err) {
-    console.log(err);
-    return;
-  }
-  app.get('/api', function(req, res) {
+app.get('/api', function(req, res) {
+  MongoClient.connect('mongodb://localhost:27017/clinvar_nerds', {server: {socketOptions: {socketTimeoutMS: 20000}}}, function(err, db) {
+    if (err) {
+      res.send(err);
+      return;
+    }
     db.collection('clinvarsets')
       .find(JSON.parse(req.query.q))
-      .maxTimeMS(20000)
       .toArray(function(err, docs) {
         if (err) {
           res.status(400); //bad request
