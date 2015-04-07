@@ -24,6 +24,7 @@ module.exports = React.createClass({
     //ingests literal MongoDB queries
     var caseSensitive = props.query.caseSensitive;
     var q = JSON.parse(props.params.q);
+    var operatorError = false;
     Object.keys(q).forEach(function(property) {
       if (typeof q[property] == 'string' && !caseSensitive) {
         q[property] = {
@@ -31,12 +32,20 @@ module.exports = React.createClass({
           $options: 'i',
         };
       } else if (q[property].$text) {
+        if (typeof q[property].$text != 'string') {
+          this.setState({loading: false, results: 'The "contains" operator cannot be used with numeric types.'});
+          err = true;
+          return;
+        }
         q[property] = {
           $regex: escapeRE(q[property].$text),
           $options: caseSensitive ? undefined : 'i',
         };
       }
-    });
+    }.bind(this));
+
+    if (operatorError) return;
+
     var url = '/api?q=' + JSON.stringify(q) + '&format=' + props.query.format;
     if (props.query.strip)
       url += '&strip=1';

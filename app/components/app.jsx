@@ -20,7 +20,7 @@ module.exports = React.createClass({
         if (!key)
           return false;
 
-        if (q[key] instanceof String) {
+        if (typeof q[key] != 'object') {
           return {
             property: key,
             operator: 'eq',
@@ -66,7 +66,7 @@ module.exports = React.createClass({
 
       //turn anything that looks like a number into a number
       var operand = restrictions[i].operand;
-      if (operand instanceof String) {
+      if (typeof operand == 'string') {
         var operandAsNumber = Number(operand);
         if (!isNaN(operandAsNumber))
           operand = operandAsNumber;
