@@ -4,7 +4,7 @@ var Input = require('./input.jsx');
 module.exports = React.createClass({
   addRestriction: function() {
     var restrictions = this.state.restrictions;
-    restrictions.push({parameter: '', operator: 'text', value: ''});
+    restrictions.push({parameter: '', operator: 'eq', value: ''});
     this.setState({restrictions: restrictions});
   },
   getInitialState: function() {
