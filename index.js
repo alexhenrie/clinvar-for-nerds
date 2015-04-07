@@ -75,7 +75,7 @@ MongoClient.connect('mongodb://localhost:27017/clinvar_nerds', function(err, db)
   app.get('/api', function(req, res) {
     db.collection('clinvarsets')
       .find(JSON.parse(req.query.q))
-      .maxTimeMS(100)
+      .maxTimeMS(20000)
       .toArray(function(err, docs) {
         if (err) {
           res.status(400); //bad request
