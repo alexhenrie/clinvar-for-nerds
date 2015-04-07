@@ -129,10 +129,6 @@ app.get('/api', function(req, res) {
   });
 });
 
-app.get('/', function(req, res) {
-  Marko.load(require.resolve(__dirname + '/views/index.marko')).render({}, res);
-});
-
 app.use(express.static(__dirname + '/assets'));
 app.use('/dist', express.static(__dirname + '/dist'));
 
