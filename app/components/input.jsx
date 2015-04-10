@@ -35,7 +35,7 @@ module.exports = React.createClass({
       <div style={{display:'flex'}}>
         <datalist id="clinvarProperties">
           {
-            Object.keys(clinvarExamples).map(function(name) {
+            Object.keys(clinvarExamples).sort().map(function(name) {
               return (
                 <option key={name} value={name}>
                   {
