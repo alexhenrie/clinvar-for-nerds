@@ -71,11 +71,9 @@ async.series(queryFunctions, function(err) {
   } else {
     fs.writeFileSync('models/clinvar-examples.js',
       'module.exports = ' + JSON.stringify(examples, null, 2) + ';');
-    if (process.argv[2] == '--details') {
-      fs.writeFileSync('used-never.txt', usedNever.sort().join('\n'));
-      fs.writeFileSync('used-once.txt', usedOnce.sort().join('\n'));
-      fs.writeFileSync('used-multiple.txt', usedMultiple.sort().join('\n'));
-    }
+    fs.writeFileSync('used-never.txt', usedNever.sort().join('\n'));
+    fs.writeFileSync('used-once.txt', usedOnce.sort().join('\n'));
+    fs.writeFileSync('used-multiple.txt', usedMultiple.sort().join('\n'));
     console.log(); //move down from the status line
     console.log('Found examples of ' + (usedOnce.length + usedMultiple.length) + ' properties out of ' + (usedNever.length + usedOnce.length + usedMultiple.length) + ' total.');
     console.log(usedOnce.length + ' of those properties only have one possible value.');
