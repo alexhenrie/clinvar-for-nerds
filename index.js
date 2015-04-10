@@ -4,7 +4,6 @@ var express = require('express');
 var app = express();
 var ClinVarSet = require('./models/clinvarset.js');
 var csvStringify = require('csv-stringify');
-var Marko = require('marko');
 var MongoClient = require('mongodb').MongoClient;
 
 /**
