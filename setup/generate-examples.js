@@ -9,8 +9,9 @@ var ClinVarSet = require('../models/clinvarset.js');
 var queryFunctions = [];
 var examples = {};
 
-var usedCount = 0;
-var totalCount = 0;
+var usedNever = [];
+var usedOnce = [];
+var usedMultiple = [];
 
 function queryForExamples(propertyName, arrayDepth, callback) {
   var matchQuery = {};
@@ -30,15 +31,19 @@ function queryForExamples(propertyName, arrayDepth, callback) {
       } else {
         //tons of possible ClinVar fields are never used, exclude them
         if (values.length) {
+          if (values.length == 1)
+            usedOnce.push(propertyName);
+          else
+            usedMultiple.push(propertyName);
           examples[propertyName] = values.map(function(value) {
             return value._id;
           });
-          usedCount++;
+        } else {
+          usedNever.push(propertyName);
         }
-        totalCount++;
         process.stdout.clearLine();
         process.stdout.cursorTo(0);
-        process.stdout.write(String(totalCount));
+        process.stdout.write(String(usedNever.length + usedOnce.length + usedMultiple.length));
         callback();
       }
     });
@@ -66,8 +71,14 @@ async.series(queryFunctions, function(err) {
   } else {
     fs.writeFileSync('models/clinvar-examples.js',
       'module.exports = ' + JSON.stringify(examples, null, 2) + ';');
+    if (process.argv[2] == '--details') {
+      fs.writeFileSync('used-never.txt', usedNever.join('\n'));
+      fs.writeFileSync('used-once.txt', usedOnce.join('\n'));
+      fs.writeFileSync('used-multiple.txt', usedMultiple.join('\n'));
+    }
     console.log(); //move down from the status line
-    console.log('Found examples of ' + usedCount + ' properties out of ' + totalCount + ' total.');
+    console.log('Found examples of ' + (usedOnce.length + usedMultiple.length) + ' properties out of ' + (usedNever.length + usedOnce.length + usedMultiple.length) + ' total.');
+    console.log(usedOnce.length + ' of those properties only have one possible value.');
     console.log('Time taken: ' + ((Date.now() - startTime) / 60000).toFixed() + ' minutes');
     process.exit(0);
   }
