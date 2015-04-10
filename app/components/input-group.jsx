@@ -1,5 +1,6 @@
-var React = require('react');
-var Input = require('./input.jsx');
+const React = require('react');
+const Input = require('./input.jsx');
+const clinvarExamples = require('../../models/clinvar-examples.js');
 
 module.exports = React.createClass({
   addRestriction: function() {
@@ -32,6 +33,7 @@ module.exports = React.createClass({
       ret = (
         <Input
           key={this.restrictionCount}
+          index={this.restrictionCount}
           onChange={this.handleChange.bind(this, this.restrictionCount)}
           onRemove={this.removeRestriction.bind(this, this.restrictionCount)}
           ref={'input' + this.restrictionCount}
@@ -43,6 +45,21 @@ module.exports = React.createClass({
     }.bind(this));
     return (
       <div>
+        <datalist id="clinvarProperties">
+          {
+            Object.keys(clinvarExamples).sort().map(function(name) {
+              return (
+                <option key={name} value={name}>
+                  {
+                    name + ' (e.g. ' + clinvarExamples[name].slice(0, 3).map(function(value) {
+                      return JSON.stringify(value);
+                    }).join(', ') + ')'
+                  }
+                </option>
+              );
+            })
+          }
+        </datalist>
         {inputComponents}
       </div>
     );
