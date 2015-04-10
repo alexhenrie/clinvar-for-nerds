@@ -1,4 +1,4 @@
-#!/usr/bin/node
+#!/usr/bin/env node
 
 const xpath = require('xpath');
 const dom = require('xmldom').DOMParser;
