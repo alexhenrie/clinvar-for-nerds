@@ -20,8 +20,14 @@ module.exports = React.createClass({
       results.style.display = 'none';
 
       results.addEventListener('load', function() {
+        var resultCount;
+        try {
+          resultCount = JSON.parse(results.contentDocument.body.textContent).length;
+        } catch (e) {
+          resultCount = 0;
+        }
         loading.style.display = 'none';
-        stats.textContent = 'Search completed in ' + ((Date.now() - this.startTime) / 1000).toFixed(2) + ' seconds.';
+        stats.textContent = 'Found ' + resultCount + ' results in ' + ((Date.now() - this.startTime) / 1000).toFixed(2) + ' seconds.';
         stats.style.display = '';
         results.style.display = '';
       }.bind(this));
