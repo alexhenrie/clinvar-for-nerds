@@ -16,18 +16,6 @@ module.exports = React.createClass({
     this.setState({operator: e.target.value}, this.props.onChange);
   },
   onPropertyChange: function(e) {
-    //update operand drop-down
-    var operandExamples = this.refs.operandExamples.getDOMNode();
-    while (operandExamples.hasChildNodes())
-      operandExamples.removeChild(operandExamples.firstChild);
-    var examples = clinvarExamples[e.target.value] || [];
-    examples.forEach(function(example) {
-      var option = document.createElement("option");
-      option.textContent = example;
-      operandExamples.appendChild(option);
-    });
-
-    //update state
     this.setState({property: e.target.value}, this.props.onChange);
   },
   render: function() {
@@ -40,7 +28,15 @@ module.exports = React.createClass({
           <option value="eq">is equal to</option>
           <option value="text">contains</option>
         </select>
-        <datalist id={'operandExamples' + this.props.index} ref="operandExamples"></datalist>
+        <datalist id={'operandExamples' + this.props.index} ref="operandExamples">
+          {
+            (clinvarExamples[this.state.property] || []).map(function(example) {
+              return (
+                <option key={example}>{example}</option>
+              );
+            })
+          }
+        </datalist>
         <input defaultValue={this.state.operand} list={'operandExamples' + this.props.index} type="text" onChange={this.onOperandChange} ref="operand" style={{display:'table-cell'}}/>
         <button onClick={this.props.onRemove} type="button">X</button>
       </div>
