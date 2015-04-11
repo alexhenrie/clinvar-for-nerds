@@ -69,6 +69,7 @@ app.set('json spaces', 2);
 app.get('/api', function(req, res) {
   MongoClient.connect('mongodb://localhost:27017/clinvar_nerds', {server: {socketOptions: {socketTimeoutMS: 20000}}}, function(err, db) {
     if (err) {
+      res.status(500); //internal server error
       res.send(err);
       return;
     }
@@ -76,6 +77,7 @@ app.get('/api', function(req, res) {
     try {
       q = JSON.parse(req.query.q);
     } catch (e) {
+      res.status(400); //bad request
       return;
     }
     db.collection('clinvarsets')
