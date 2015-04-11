@@ -1,4 +1,5 @@
 var React = require('react');
+var request = require('superagent');
 
 //https://git.wikimedia.org/blob/mediawiki%2Fcore.git/HEAD/resources%2Fsrc%2Fjquery%2Fjquery.mwExtension.js
 function escapeRE(str) {
@@ -27,7 +28,11 @@ module.exports = React.createClass({
           resultCount = 0;
         }
         loading.style.display = 'none';
-        stats.textContent = 'Found ' + resultCount + ' results in ' + ((Date.now() - this.startTime) / 1000).toFixed(2) + ' seconds.';
+        if (resultCount && this.totalRecords)
+          stats.textContent = 'Showing records 1-' + resultCount + ' of ' + this.totalRecords + '. ';
+        else
+          stats.textContent = '';
+        stats.textContent += 'Query completed in ' + ((Date.now() - this.startTime) / 1000).toFixed(2) + ' seconds.';
         stats.style.display = '';
         results.style.display = '';
       }.bind(this));
@@ -69,10 +74,15 @@ module.exports = React.createClass({
 
     if (operatorError) return;
 
-    var url = '/api?q=' + JSON.stringify(q) + '&format=' + props.query.format;
+    var q = JSON.stringify(q) + '&format=' + props.query.format;
     if (props.query.strip)
-      url += '&strip=1';
-    this.setState({url: url});
+      q += '&strip=1';
+
+    this.totalRecords = 0;
+    request.get('/count?q=' + q, function(error, result) {
+      this.totalRecords = result.text;
+    }.bind(this));
+    this.setState({url: '/find?q=' + q});
   },
   render: function() {
     if (this.state.url) {
