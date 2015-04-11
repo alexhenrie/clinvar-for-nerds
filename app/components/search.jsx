@@ -1,5 +1,4 @@
 var React = require('react');
-var request = require('superagent');
 
 //https://git.wikimedia.org/blob/mediawiki%2Fcore.git/HEAD/resources%2Fsrc%2Fjquery%2Fjquery.mwExtension.js
 function escapeRE(str) {
@@ -10,14 +9,32 @@ module.exports = React.createClass({
   componentDidMount: function() {
     this.getResults(this.props);
   },
+  componentDidUpdate: function() {
+    if (this.refs.results) {
+      var loading = this.refs.loading.getDOMNode();
+      var stats = this.refs.stats.getDOMNode();
+      var results = this.refs.results.getDOMNode();
+
+      loading.style.display = '';
+      stats.style.display = 'none';
+      results.style.display = 'none';
+
+      results.addEventListener('load', function() {
+        loading.style.display = 'none';
+        stats.textContent = 'Search completed in ' + ((Date.now() - this.startTime) / 1000).toFixed(2) + ' seconds.';
+        stats.style.display = '';
+        results.style.display = '';
+      }.bind(this));
+      results.src = this.state.url;
+    }
+  },
   componentWillReceiveProps: function(newProps) {
     this.getResults(newProps);
   },
   getInitialState: function() {
-    return {loading: false, results: ''};
+    return {url: ''};
   },
   getResults: function(props) {
-    this.setState({loading: true});
     this.startTime = Date.now();
 
     //our UI supports some operators that our API does not, because our API
@@ -33,7 +50,7 @@ module.exports = React.createClass({
         };
       } else if (q[property].$text) {
         if (typeof q[property].$text != 'string') {
-          this.setState({loading: false, results: 'The "contains" operator cannot be used with numeric types.'});
+          this.setState({url: 'data:text/plain,The "contains" operator cannot be used with numeric types.'});
           err = true;
           return;
         }
@@ -49,32 +66,20 @@ module.exports = React.createClass({
     var url = '/api?q=' + JSON.stringify(q) + '&format=' + props.query.format;
     if (props.query.strip)
       url += '&strip=1';
-
-    request.get(url, function(error, result) {
-      if (result.text)
-        this.setState({loading: false, results: result.text});
-      else
-        this.setState({loading: false, results: error});
-    }.bind(this));
+    this.setState({url: url});
   },
   render: function() {
-    if (this.state.loading) {
-      return (
-        <div style={{textAlign:'center'}}>
-          {/* https://genomevolution.org/wiki/images/d/df/DNA_orbit_animated_small-side.gif */}
-          {/* https://commons.wikimedia.org/wiki/File:DNA_orbit_animated_small.gif */}
-          <img src="/DNA_orbit_animated_small-side.gif"/><br/>
-          Loading...
-        </div>
-      );
-    } else if (this.state.results) {
+    if (this.state.url) {
       return (
         <div className="tall">
-          <div style={{textAlign:'right'}}>Search completed in {((Date.now() - this.startTime) / 1000).toFixed(2)} seconds.</div>
-          {/* send as an <object> so that the user can easily right-click to save */}
-          <object data={'data:text/plain,' + encodeURI(this.state.results)} style={{backgroundColor:'#F5F5F5', border:'1px solid #CCC', flexGrow:'1'}}>
-            {this.state.results}
-          </object>
+          <div ref="loading" style={{textAlign:'center'}}>
+            {/* https://genomevolution.org/wiki/images/d/df/DNA_orbit_animated_small-side.gif */}
+            {/* https://commons.wikimedia.org/wiki/File:DNA_orbit_animated_small.gif */}
+            <img src="/DNA_orbit_animated_small-side.gif"/><br/>
+            Loading...
+          </div>
+          <div ref="stats" style={{display:'none', textAlign:'right'}}></div>
+          <iframe ref="results" style={{backgroundColor:'#F5F5F5', border:'1px solid #CCC', display:'none', flexGrow:'1'}}></iframe>
         </div>
       );
     } else {
