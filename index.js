@@ -72,8 +72,14 @@ app.get('/api', function(req, res) {
       res.send(err);
       return;
     }
+    var q;
+    try {
+      q = JSON.parse(req.query.q);
+    } catch (e) {
+      return;
+    }
     db.collection('clinvarsets')
-      .find(JSON.parse(req.query.q))
+      .find(q)
       .limit(1000) //make sure the toArray function doesn't take forever or run out of memory
       .toArray(function(err, docs) {
         if (err) {
