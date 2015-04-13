@@ -32,7 +32,7 @@ module.exports = React.createClass({
           stats.textContent = 'Showing records 1-' + resultCount + ' of ' + this.totalRecords + '. ';
         else
           stats.textContent = '';
-        stats.textContent += 'Query completed in ' + ((Date.now() - this.startTime) / 1000).toFixed(2) + ' seconds.';
+        stats.textContent += 'Search completed in ' + ((Date.now() - this.startTime) / 1000).toFixed(2) + ' seconds.';
         stats.style.display = '';
         results.style.display = '';
       }.bind(this));
