@@ -11,7 +11,7 @@ var MongoClient = require('mongodb').MongoClient;
  */
 function stripMongo(obj) {
   Object.keys(obj).forEach(function(key) {
-    if (key == '_id' || key == '__v')
+    if (key == '_id')
       delete obj[key]
     else if (typeof(obj[key]) != 'object')
       return;
@@ -106,6 +106,7 @@ app.get('/find', function(req, res) {
     }
     db.collection('clinvarsets')
       .find(q)
+      .project({__v: 0})
       .limit(1000) //make sure the toArray function doesn't take forever or run out of memory
       .toArray(function(err, docs) {
         if (err) {
