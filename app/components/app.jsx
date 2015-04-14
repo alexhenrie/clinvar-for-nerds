@@ -66,12 +66,12 @@ module.exports = React.createClass({
     var q = '{';
     var restrictions = this.refs.inputGroup.state.restrictions;
     for (var i = 0; i < restrictions.length; i++) {
-      if (!restrictions[i].property || restrictions[i].operand == '')
+      if (!restrictions[i].property)
         continue;
 
       //turn anything that looks like a number into a number
       var operand = restrictions[i].operand;
-      if (typeof operand == 'string') {
+      if (restrictions[i].operand != '') {
         var operandAsNumber = Number(operand);
         if (!isNaN(operandAsNumber))
           operand = operandAsNumber;
