@@ -75,6 +75,16 @@ module.exports = React.createClass({
           $regex: escapeRE(q[property].$text),
           $options: caseSensitive ? undefined : 'i',
         };
+      } else if (q[property].$ntext) {
+        if (typeof q[property].$text != 'string') {
+          this.setState({url: 'data:text/plain,The "does not contain" operator cannot be used with numeric types.'});
+          err = true;
+          return;
+        }
+        q[property] = {$not:{
+          $regex: escapeRE(q[property].$text),
+          $options: caseSensitive ? undefined : 'i',
+        }};
       }
     }.bind(this));
 

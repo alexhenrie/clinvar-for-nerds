@@ -22,11 +22,13 @@ module.exports = React.createClass({
     return (
       <div style={{display:'flex'}}>
         <input defaultValue={this.state.property} list="clinvarProperties" onChange={this.onPropertyChange} onClick={this.onPropertyChange} ref="property" style={{display:'table-cell',width:'100%'}} type="text"/>
-        <select defaultValue={this.state.operator} onChange={this.onOperatorChange} style={{display:'table-cell'}}>
+        <select defaultValue={this.state.operator} onChange={this.onOperatorChange} style={{display:'table-cell',width:'25ex'}}>
           <option value="gt">is greater than</option>
           <option value="lt">is less than</option>
           <option value="eq">is equal to</option>
+          <option value="ne">is not equal to</option>
           <option value="text">contains</option>
+          <option value="ntext">does not contain</option>
         </select>
         <datalist id={'operandExamples' + this.props.index} ref="operandExamples">
           {
