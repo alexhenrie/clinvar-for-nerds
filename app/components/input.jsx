@@ -23,6 +23,7 @@ module.exports = React.createClass({
       <div style={{display:'flex'}}>
         <input defaultValue={this.state.property} list="clinvarProperties" onChange={this.onPropertyChange} onClick={this.onPropertyChange} ref="property" style={{display:'table-cell',width:'100%'}} type="text"/>
         <select defaultValue={this.state.operator} onChange={this.onOperatorChange} style={{display:'table-cell',width:'25ex'}}>
+          <option value="exists">exists</option>
           <option value="gt">is greater than</option>
           <option value="lt">is less than</option>
           <option value="eq">is equal to</option>
@@ -39,7 +40,7 @@ module.exports = React.createClass({
             })
           }
         </datalist>
-        <input defaultValue={this.state.operand} list={'operandExamples' + this.props.index} type="text" onChange={this.onOperandChange} ref="operand" style={{display:'table-cell'}}/>
+        <input defaultValue={this.state.operand} list={'operandExamples' + this.props.index} type="text" onChange={this.onOperandChange} ref="operand" style={{display:this.state.operator=='exists'?'none':'table-cell'}}/>
         <button onClick={this.props.onRemove} type="button">X</button>
       </div>
     );

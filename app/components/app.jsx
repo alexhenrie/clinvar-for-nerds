@@ -32,11 +32,17 @@ module.exports = React.createClass({
             operand: q[key],
           }
         } else {
-          var operator = q[key].$gt ? 'gt' : q[key].$lt ? 'lt' : q[key].$eq ? 'eq' : 'text';
+          var operator = q[key].$exists ? 'exists' :
+                         q[key].$gt ? 'gt' :
+                         q[key].$lt ? 'lt' :
+                         q[key].$eq ? 'eq' :
+                         'text';
           return {
             property: key,
             operator: operator,
-            operand: q[key] instanceof Object ? q[key]['$' + operator] : q[key],
+            operand: q[key].$exists ? '' :
+                     q[key] instanceof Object ? q[key]['$' + operator] :
+                     q[key],
           };
         }
       });
@@ -66,22 +72,26 @@ module.exports = React.createClass({
     var q = '{';
     var restrictions = this.refs.inputGroup.state.restrictions;
     for (var i = 0; i < restrictions.length; i++) {
-      if (!restrictions[i].property)
-        continue;
-
-      //turn anything that looks like a number into a number
+      var property = restrictions[i].property;
+      var operator = restrictions[i].operator;
       var operand = restrictions[i].operand;
-      if (restrictions[i].operand != '') {
+
+      if (operator == 'exists') {
+        operand = 1;
+      } else if (!property) {
+        continue;
+      } else if (operand != '') {
+        //turn anything that looks like a number into a number
         var operandAsNumber = Number(operand);
         if (!isNaN(operandAsNumber))
           operand = operandAsNumber;
       }
 
-      q += '"' + restrictions[i].property + '":';
-      if (restrictions[i].operator == 'eq')
+      q += '"' + property + '":';
+      if (operator == 'eq')
         q += JSON.stringify(operand);
       else
-        q += '{"$' + restrictions[i].operator + '":' + JSON.stringify(operand) + '}';
+        q += '{"$' + operator + '":' + JSON.stringify(operand) + '}';
       //JSON does not permit trailing commas
       if (i != restrictions.length - 1)
         q += ','
