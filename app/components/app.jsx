@@ -15,7 +15,12 @@ module.exports = React.createClass({
     var restrictions;
     var q = this.props.params.q;
     if (q && Object.keys(q).length) {
-      q = JSON.parse(q);
+      try {
+        q = JSON.parse(q);
+      } catch (e) {
+        q = {};
+        console.log('Syntax error in query.');
+      }
       restrictions = Object.keys(q).map(function(key) {
         if (!key)
           return false;

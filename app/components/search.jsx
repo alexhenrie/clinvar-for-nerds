@@ -51,7 +51,13 @@ module.exports = React.createClass({
     //our UI supports some operators that our API does not, because our API
     //ingests literal MongoDB queries
     var caseSensitive = props.query.caseSensitive;
-    var q = JSON.parse(props.params.q);
+    var q;
+    try {
+      q = JSON.parse(props.params.q);
+    } catch (e) {
+      this.setState({url: 'data:text/plain,Syntax error in query.'});
+      return;
+    }
     var operatorError = false;
     Object.keys(q).forEach(function(property) {
       if (typeof q[property] == 'string' && !caseSensitive) {
