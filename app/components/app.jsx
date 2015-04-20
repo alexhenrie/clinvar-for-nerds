@@ -2,14 +2,15 @@ var InputGroup = require('./input-group.jsx');
 var React = require('react');
 var Router = require('react-router');
 
-var Navigation = Router.Navigation;
 var RouteHandler = Router.RouteHandler;
 
 module.exports = React.createClass({
   addRestriction : function() {
     this.refs.inputGroup.addRestriction();
   },
-  mixins: [Navigation],
+  contextTypes: {
+    router: React.PropTypes.func
+  },
   render: function() {
     //deserialize the query
     var restrictions;
@@ -99,7 +100,7 @@ module.exports = React.createClass({
     q += '}';
 
     //execute the search
-    this.transitionTo('search', {q: q}, {
+    this.context.router.transitionTo('search', {q: q}, {
       'caseSensitive': this.refs.caseSensitive.getDOMNode().checked ? 1 : undefined,
       'format': this.refs.formatCsv.getDOMNode().checked ? 'csv' : 'json',
       'strip': this.refs.omitEmpty.getDOMNode().checked ? 1 : undefined,
