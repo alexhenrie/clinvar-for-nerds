@@ -21,21 +21,19 @@ module.exports = React.createClass({
       results.style.display = 'none';
 
       results.addEventListener('load', function() {
-        var resultCount;
+        this.loading = false;
         try {
-          resultCount = JSON.parse(results.contentDocument.body.textContent).length;
+          this.resultCount = JSON.parse(results.contentDocument.body.textContent).length;
         } catch (e) {
-          resultCount = 0;
+          this.resultCount = 0;
         }
+        this.showStats();
         loading.style.display = 'none';
-        if (resultCount && this.totalRecords)
-          stats.textContent = 'Showing records 1-' + resultCount + ' of ' + this.totalRecords + '. ';
-        else
-          stats.textContent = '';
-        stats.textContent += 'Search completed in ' + ((Date.now() - this.startTime) / 1000).toFixed(2) + ' seconds.';
         stats.style.display = '';
         results.style.display = '';
       }.bind(this));
+
+      this.loading = true;
       results.src = this.state.url;
     }
   },
@@ -97,6 +95,7 @@ module.exports = React.createClass({
     this.totalRecords = 0;
     request.get('/count?q=' + q, function(error, result) {
       this.totalRecords = result.text;
+      this.showStats();
     }.bind(this));
     this.setState({url: '/find?q=' + q});
   },
@@ -110,7 +109,12 @@ module.exports = React.createClass({
             <img src="/DNA_orbit_animated_small-side.gif"/><br/>
             Loading...
           </div>
-          <div ref="stats" style={{display:'none', textAlign:'right'}}></div>
+          <div ref="stats" style={{display:'none', textAlign:'right'}}>
+            {
+              (this.resultCount && this.totalRecords ? 'Showing records 1-' + this.resultCount + ' of ' + this.totalRecords + '. ' : '') +
+              'Search completed in ' + ((Date.now() - this.startTime) / 1000).toFixed(2) + ' seconds.'
+            }
+          </div>
           <iframe ref="results" style={{backgroundColor:'#F5F5F5', border:'1px solid #CCC', display:'none', flexGrow:'1'}}></iframe>
         </div>
       );
@@ -120,4 +124,12 @@ module.exports = React.createClass({
       );
     }
   },
+  showStats: function() {
+    var stats = this.refs.stats.getDOMNode();
+    stats.textContent = '';
+    if (this.resultCount && this.totalRecords)
+      stats.textContent += 'Showing records 1-' + this.resultCount + ' of ' + this.totalRecords + '. ';
+    if (!this.loading)
+      stats.textContent += 'Search completed in ' + ((Date.now() - this.startTime) / 1000).toFixed(2) + ' seconds.';
+  }
 });
