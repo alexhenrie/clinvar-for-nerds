@@ -68,7 +68,7 @@ module.exports = React.createClass({
       } else if (q[property].$text) {
         if (typeof q[property].$text != 'string') {
           this.setState({url: 'data:text/plain,The "contains" operator cannot be used with numeric types.'});
-          err = true;
+          operatorError = true;
           return;
         }
         q[property] = {
@@ -78,7 +78,7 @@ module.exports = React.createClass({
       } else if (q[property].$ntext) {
         if (typeof q[property].$text != 'string') {
           this.setState({url: 'data:text/plain,The "does not contain" operator cannot be used with numeric types.'});
-          err = true;
+          operatorError = true;
           return;
         }
         q[property] = {$not:{
