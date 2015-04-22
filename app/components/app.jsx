@@ -4,6 +4,8 @@ var Router = require('react-router');
 
 var RouteHandler = Router.RouteHandler;
 
+const RECORDS_PER_PAGE = require('../../records-per-page');
+
 module.exports = React.createClass({
   addRestriction : function() {
     this.refs.inputGroup.addRestriction();
@@ -64,11 +66,21 @@ module.exports = React.createClass({
             <button className="btn btn-primary" type="submit">Search</button>
           </div>
         </form>
-        <RouteHandler {...this.props}/>
+        <RouteHandler
+          {...this.props}
+          transition={this.transition}
+        />
       </div>
     );
   },
   search: function(e) {
+    //execute the search
+    this.transition(this.props.query.start);
+
+    //don't actually submit the form
+    e.preventDefault();
+  },
+  transition: function(start) {
     //serialize the query
     var q = '{';
     var restrictions = this.refs.inputGroup.state.restrictions;
@@ -99,14 +111,12 @@ module.exports = React.createClass({
     }
     q += '}';
 
-    //execute the search
+    //change the URL fragment
     this.context.router.transitionTo('search', {q: q}, {
-      'caseSensitive': this.refs.caseSensitive.getDOMNode().checked ? 1 : undefined,
-      'format': this.refs.formatCsv.getDOMNode().checked ? 'csv' : 'json',
-      'strip': this.refs.omitEmpty.getDOMNode().checked ? 1 : undefined,
+      caseSensitive: this.refs.caseSensitive.getDOMNode().checked ? 1 : undefined,
+      format: this.refs.formatCsv.getDOMNode().checked ? 'csv' : 'json',
+      strip: this.refs.omitEmpty.getDOMNode().checked ? 1 : undefined,
+      start: start,
     });
-
-    //don't actually submit the form
-    e.preventDefault();
   },
 });

@@ -5,6 +5,7 @@ var app = express();
 var ClinVarSet = require('./models/clinvarset.js');
 var csvStringify = require('csv-stringify');
 var MongoClient = require('mongodb').MongoClient;
+const RECORDS_PER_PAGE = require('./records-per-page');
 
 /**
  * Removes properties added by Mongo
@@ -106,14 +107,19 @@ app.get('/find', function(req, res) {
     }
     db.collection('clinvarsets')
       .find(q)
+      .skip(Number(req.query.start) || 0)
       .project({__v: 0})
-      .limit(1000) //make sure the toArray function doesn't take forever or run out of memory
+      .limit(RECORDS_PER_PAGE) //make sure the toArray function doesn't take forever or run out of memory
       .toArray(function(err, docs) {
         if (err) {
           res.status(400); //bad request
           res.send(err.toString());
           return;
         }
+
+        //mongo will return more than our limit if it thinks it won't hurt performance
+        //we don't want this, we want a hard limit
+        docs = docs.splice(0, RECORDS_PER_PAGE);
 
         //remove Mongo metadata
         stripMongo(docs);

@@ -1,6 +1,8 @@
 var React = require('react');
 var request = require('superagent');
 
+const RECORDS_PER_PAGE = require('../../records-per-page');
+
 //https://git.wikimedia.org/blob/mediawiki%2Fcore.git/HEAD/resources%2Fsrc%2Fjquery%2Fjquery.mwExtension.js
 function escapeRE(str) {
   return str.replace(/([\\{}()|.?*+\-\^$\[\]])/g, '\\$1');
@@ -11,6 +13,9 @@ module.exports = React.createClass({
     this.getResults(this.props);
   },
   componentDidUpdate: function() {
+    var turner = this.refs.turner.getDOMNode();
+    turner.style.display = 'none';
+
     if (this.refs.results) {
       var loading = this.refs.loading.getDOMNode();
       var stats = this.refs.stats.getDOMNode();
@@ -44,6 +49,10 @@ module.exports = React.createClass({
     return {url: ''};
   },
   getResults: function(props) {
+    //save this value for navigation later
+    this.start = Number(props.query.start) || 0;
+
+    //start the benchmark
     this.startTime = Date.now();
 
     //our UI supports some operators that our API does not, because our API
@@ -91,13 +100,26 @@ module.exports = React.createClass({
     var q = JSON.stringify(q) + '&format=' + props.query.format;
     if (props.query.strip)
       q += '&strip=1';
+    if (props.query.start)
+      q += '&start=' + props.query.start;
 
-    this.totalRecords = 0;
     request.get('/count?q=' + q, function(error, result) {
       this.totalRecords = result.text;
       this.showStats();
     }.bind(this));
     this.setState({url: '/find?q=' + q});
+  },
+  goToFirstPage: function() {
+    this.props.transition(0);
+  },
+  goToLastPage: function() {
+    this.props.transition(Math.floor(this.totalRecords / RECORDS_PER_PAGE) * RECORDS_PER_PAGE);
+  },
+  goToNextPage: function() {
+    this.props.transition(this.start + RECORDS_PER_PAGE)
+  },
+  goToPreviousPage: function() {
+    this.props.transition(Math.max(0, this.start - RECORDS_PER_PAGE));
   },
   render: function() {
     if (this.state.url) {
@@ -109,13 +131,20 @@ module.exports = React.createClass({
             <img src="/DNA_orbit_animated_small-side.gif"/><br/>
             Loading...
           </div>
-          <div ref="stats" style={{display:'none', textAlign:'right'}}>
-            {
-              (this.resultCount && this.totalRecords ? 'Showing records 1-' + this.resultCount + ' of ' + this.totalRecords + '. ' : '') +
-              'Search completed in ' + ((Date.now() - this.startTime) / 1000).toFixed(2) + ' seconds.'
-            }
-          </div>
+          <div ref="stats" style={{display:'none', textAlign:'right'}}></div>
           <iframe ref="results" style={{backgroundColor:'#F5F5F5', border:'1px solid #CCC', display:'none', flexGrow:'1'}}></iframe>
+          <table ref="turner" style={{width:'100%'}}>
+            <tr>
+              <td>
+                <button onClick={this.goToFirstPage} ref="first">&lt;&lt; First page</button>
+                <button onClick={this.goToPreviousPage} ref="prev">&lt; Previous {RECORDS_PER_PAGE}</button>
+              </td>
+              <td style={{textAlign:'right'}}>
+                <button onClick={this.goToNextPage} ref="next">Next {RECORDS_PER_PAGE} &gt;</button>
+                <button onClick={this.goToLastPage} ref="last">Last page &gt;&gt;</button>
+              </td>
+            </tr>
+          </table>
         </div>
       );
     } else {
@@ -126,10 +155,34 @@ module.exports = React.createClass({
   },
   showStats: function() {
     var stats = this.refs.stats.getDOMNode();
-    stats.textContent = '';
-    if (this.resultCount && this.totalRecords)
-      stats.textContent += 'Showing records 1-' + this.resultCount + ' of ' + this.totalRecords + '. ';
-    if (!this.loading)
-      stats.textContent += 'Search completed in ' + ((Date.now() - this.startTime) / 1000).toFixed(2) + ' seconds.';
-  }
+    if (this.loading) {
+      stats.textContent = '';
+    } else {
+      var start = Number(this.props.query.start) || 0;
+      stats.textContent = 'Showing records ' + (start + 1) + '-' + (start + this.resultCount) + ' of ' + this.totalRecords + '. Search completed in ' + ((Date.now() - this.startTime) / 1000).toFixed(2) + ' seconds.';
+
+      var enablePrev = (start > 0);
+      var enableNext = (start + this.resultCount < this.totalRecords);
+      if (enablePrev || enableNext) {
+        this.refs.turner.getDOMNode().style.display = '';
+      }
+      if (enablePrev) {
+        this.refs.first.getDOMNode().style.display = '';
+        this.refs.prev.getDOMNode().style.display = '';
+      } else {
+        this.refs.first.getDOMNode().style.display = 'none';
+        this.refs.prev.getDOMNode().style.display = 'none';
+      }
+      if (enableNext) {
+        this.refs.next.getDOMNode().style.display = '';
+        this.refs.last.getDOMNode().style.display = '';
+      } else {
+        this.refs.next.getDOMNode().style.display = 'none';
+        this.refs.last.getDOMNode().style.display = 'none';
+      }
+    }
+  },
+  transition: function(start) {
+    this.props.transition(start);
+  },
 });
