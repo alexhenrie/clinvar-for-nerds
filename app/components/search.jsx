@@ -148,9 +148,7 @@ module.exports = React.createClass({
         </div>
       );
     } else {
-      return (
-        <div/>
-      );
+      return null;
     }
   },
   showStats: function() {
