@@ -132,7 +132,7 @@ module.exports = React.createClass({
             Loading...
           </div>
           <div ref="stats" style={{display:'none', textAlign:'right'}}></div>
-          <iframe ref="results" style={{backgroundColor:'#F5F5F5', border:'1px solid #CCC', display:'none', flexGrow:'1', fontFamily:'monospace'}}></iframe>
+          <iframe ref="results" style={{backgroundColor:'#F5F5F5', border:'1px solid #CCC', display:'none', flexGrow:'1'}}></iframe>
           <table ref="turner" style={{width:'100%'}}>
             <tr>
               <td>
