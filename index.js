@@ -128,41 +128,346 @@ app.get('/find', function(req, res) {
         if (req.query.strip)
           stripEmpty(docs);
 
-        if (!req.query.format || req.query.format == 'json') {
-          res.json(docs);
-        } else {
-          //create a master list of headers
-          var properties = [];
-          for (var i = 0; i < docs.length; i++)
-            listProperties(docs[i], properties, '');
-          properties.sort();
+        switch (req.query.format)
+        {
+          case 'csv':
+            //create a master list of headers
+            var properties = [];
+            for (var i = 0; i < docs.length; i++)
+              listProperties(docs[i], properties, '');
+            properties.sort();
 
-          //transform each ClinVarSet into a flat object
-          var flatSets = docs.map(function(set) {
-            var flatSet = {};
-            flatten(set, flatSet, '');
-            return flatSet;
-          })
+            //transform each ClinVarSet into a flat object
+            var flatSets = docs.map(function(set) {
+              var flatSet = {};
+              flatten(set, flatSet, '');
+              return flatSet;
+            })
 
-          //output each ClinVarSet as a row aligned to the master headers
-          rows = [[]];
-          properties.forEach(function(property) {
-            rows[0].push(property);
-          });
-          flatSets.forEach(function(flatSet) {
-            row = [];
+            //output each ClinVarSet as a row aligned to the master headers
+            rows = [[]];
             properties.forEach(function(property) {
-              row.push(flatSet[property] || '');
+              rows[0].push(property);
             });
-            rows.push(row);
-          });
-          csvStringify(rows, function(err, output) {
-            if (err) {
-              console.log(err);
-              return;
-            }
+            flatSets.forEach(function(flatSet) {
+              row = [];
+              properties.forEach(function(property) {
+                row.push(flatSet[property] || '');
+              });
+              rows.push(row);
+            });
+            csvStringify(rows, function(err, output) {
+              if (err) {
+                console.log(err);
+                return;
+              }
+              res.set('Content-Type', 'text/plain');
+              res.send(output);
+            });
+            break;
+          case 'vcf':
+            var now = Date.now();
+            var output =
+              '##fileformat=VCFv4.2\n' +
+              '##fileDate=' + (new Date()).toISOString().substring(0, 10).replace(/-/g, '') + '\n' +
+              '##source=ClinVar for Nerds\n' +
+              '##reference=GRCh38\n' +
+              '##INFO=<ID=RS,Number=1,Type=Integer,Description="dbSNP ID (i.e. rs number)">\n' +
+              '##INFO=<ID=RSPOS,Number=1,Type=Integer,Description="Chr position reported in dbSNP">\n' +
+              //'##INFO=<ID=RV,Number=0,Type=Flag,Description="RS orientation is reversed">\n' +
+              //'##INFO=<ID=VP,Number=1,Type=String,Description="Variation Property.  Documentation is at ftp://ftp.ncbi.nlm.nih.gov/snp/specs/dbSNP_BitField_latest.pdf">\n' +
+              '##INFO=<ID=GENEINFO,Number=1,Type=String,Description="Pairs each of gene symbol:gene id.  The gene symbol and id are delimited by a colon (:) and each pair is delimited by a vertical bar (|)">\n' +
+              //'##INFO=<ID=dbSNPBuildID,Number=1,Type=Integer,Description="First dbSNP Build for RS">\n' +
+              '##INFO=<ID=SAO,Number=1,Type=Integer,Description="Variant Allele Origin: 0 - unspecified, 1 - Germline, 2 - Somatic, 3 - Both">\n' +
+              '##INFO=<ID=SSR,Number=1,Type=Integer,Description="Variant Suspect Reason Codes (may be more than one value added together) 0 - unspecified, 1 - Paralog, 2 - byEST, 4 - oldAlign, 8 - Para_EST, 16 - 1kg_failed, 1024 - other">\n' +
+              '##INFO=<ID=WGT,Number=1,Type=Integer,Description="Weight, 00 - unmapped, 1 - weight 1, 2 - weight 2, 3 - weight 3 or more">\n' +
+              //'##INFO=<ID=VC,Number=1,Type=String,Description="Variation Class">\n' +
+              //'##INFO=<ID=PM,Number=0,Type=Flag,Description="Variant is Precious(Clinical,Pubmed Cited)">\n' +
+              //'##INFO=<ID=TPA,Number=0,Type=Flag,Description="Provisional Third Party Annotation(TPA) (currently rs from PHARMGKB who will give phenotype data)">\n' +
+              //'##INFO=<ID=PMC,Number=0,Type=Flag,Description="Links exist to PubMed Central article">\n' +
+              //'##INFO=<ID=S3D,Number=0,Type=Flag,Description="Has 3D structure - SNP3D table">\n' +
+              //'##INFO=<ID=SLO,Number=0,Type=Flag,Description="Has SubmitterLinkOut - From SNP->SubSNP->Batch.link_out">\n' +
+              '##INFO=<ID=NSF,Number=0,Type=Flag,Description="Has non-synonymous frameshift A coding region variation where one allele in the set changes all downstream amino acids. FxnClass = 44">\n' +
+              '##INFO=<ID=NSM,Number=0,Type=Flag,Description="Has non-synonymous missense A coding region variation where one allele in the set changes protein peptide. FxnClass = 42">\n' +
+              '##INFO=<ID=NSN,Number=0,Type=Flag,Description="Has non-synonymous nonsense A coding region variation where one allele in the set changes to STOP codon (TER). FxnClass = 41">\n' +
+              //'##INFO=<ID=REF,Number=0,Type=Flag,Description="Has reference A coding region variation where one allele in the set is identical to the reference sequence. FxnCode = 8">\n' +
+              '##INFO=<ID=SYN,Number=0,Type=Flag,Description="Has synonymous A coding region variation where one allele in the set does not change the encoded amino acid. FxnCode = 3">\n' +
+              '##INFO=<ID=U3,Number=0,Type=Flag,Description="In 3\' UTR Location is in an untranslated region (UTR). FxnCode = 53">\n' +
+              '##INFO=<ID=U5,Number=0,Type=Flag,Description="In 5\' UTR Location is in an untranslated region (UTR). FxnCode = 55">\n' +
+              '##INFO=<ID=ASS,Number=0,Type=Flag,Description="In acceptor splice site FxnCode = 73">\n' +
+              '##INFO=<ID=DSS,Number=0,Type=Flag,Description="In donor splice-site FxnCode = 75">\n' +
+              '##INFO=<ID=INT,Number=0,Type=Flag,Description="In Intron FxnCode = 6">\n' +
+              //'##INFO=<ID=R3,Number=0,Type=Flag,Description="In 3\' gene region FxnCode = 13">\n' +
+              //'##INFO=<ID=R5,Number=0,Type=Flag,Description="In 5\' gene region FxnCode = 15">\n' +
+              //'##INFO=<ID=OTH,Number=0,Type=Flag,Description="Has other variant with exactly the same set of mapped positions on NCBI refernce assembly.">\n' +
+              '##INFO=<ID=CFL,Number=0,Type=Flag,Description="Has Assembly conflict. This is for weight 1 and 2 variant that maps to different chromosomes on different assemblies.">\n' +
+              //'##INFO=<ID=ASP,Number=0,Type=Flag,Description="Is Assembly specific. This is set if the variant only maps to one assembly">\n' +
+              //'##INFO=<ID=MUT,Number=0,Type=Flag,Description="Is mutation (journal citation, explicit fact): a low frequency variation that is cited in journal and other reputable sources">\n' +
+              //'##INFO=<ID=VLD,Number=0,Type=Flag,Description="Is Validated.  This bit is set if the variant has 2+ minor allele count based on frequency or genotype data.">\n' +
+              //'##INFO=<ID=G5A,Number=0,Type=Flag,Description=">5% minor allele frequency in each and all populations">\n' +
+              //'##INFO=<ID=G5,Number=0,Type=Flag,Description=">5% minor allele frequency in 1+ populations">\n' +
+              //'##INFO=<ID=HD,Number=0,Type=Flag,Description="Marker is on high density genotyping kit (50K density or greater).  The variant may have phenotype associations present in dbGaP.">\n' +
+              //'##INFO=<ID=GNO,Number=0,Type=Flag,Description="Genotypes available. The variant has individual genotype (in SubInd table).">\n' +
+              //'##INFO=<ID=KGPhase1,Number=0,Type=Flag,Description="1000 Genome phase 1 (incl. June Interim phase 1)">\n' +
+              //'##INFO=<ID=KGPhase3,Number=0,Type=Flag,Description="1000 Genome phase 3">\n' +
+              //'##INFO=<ID=CDA,Number=0,Type=Flag,Description="Variation is interrogated in a clinical diagnostic assay">\n' +
+              //'##INFO=<ID=LSD,Number=0,Type=Flag,Description="Submitted from a locus-specific database">\n' +
+              //'##INFO=<ID=MTP,Number=0,Type=Flag,Description="Microattribution/third-party annotation(TPA:GWAS,PAGE)">\n' +
+              '##INFO=<ID=OM,Number=0,Type=Flag,Description="Has OMIM/OMIA">\n' +
+              //'##INFO=<ID=NOC,Number=0,Type=Flag,Description="Contig allele not present in variant allele list. The reference sequence allele at the mapped position is not present in the variant allele list, adjusted for orientation.">\n' +
+              //'##INFO=<ID=WTD,Number=0,Type=Flag,Description="Is Withdrawn by submitter If one member ss is withdrawn by submitter, then this bit is set.  If all member ss\' are withdrawn, then the rs is deleted to SNPHistory">\n' +
+              //'##INFO=<ID=NOV,Number=0,Type=Flag,Description="Rs cluster has non-overlapping allele sets. True when rs set has more than 2 alleles from different submissions and these sets share no alleles in common.">\n' +
+              //'##INFO=<ID=CAF,Number=.,Type=String,Description="An ordered, comma delimited list of allele frequencies based on 1000Genomes, starting with the reference allele followed by alternate alleles as ordered in the ALT column. Where a 1000Genomes alternate allele is not in the dbSNPs alternate allele set, the allele is added to the ALT column.  The minor allele is the second largest value in the list, and was previuosly reported in VCF as the GMAF.  This is the GMAF reported on the RefSNP and EntrezSNP pages and VariationReporter">\n' +
+              //'##INFO=<ID=COMMON,Number=1,Type=Integer,Description="RS is a common SNP.  A common SNP is one that has at least one 1000Genomes population with a minor allele of frequency >= 1% and for which 2 or more founders contribute to that minor allele frequency.">\n' +
+              '##INFO=<ID=CLNHGVS,Number=.,Type=String,Description="Variant names from HGVS.    The order of these variants corresponds to the order of the info in the other clinical  INFO tags.">\n' +
+              //'##INFO=<ID=CLNALLE,Number=.,Type=Integer,Description="Variant alleles from REF or ALT columns.  0 is REF, 1 is the first ALT allele, etc.  This is used to match alleles with other corresponding clinical (CLN) INFO tags.  A value of -1 indicates that no allele was found to match a corresponding HGVS allele name.">\n' +
+              //'##INFO=<ID=CLNSRC,Number=.,Type=String,Description="Variant Clinical Chanels">\n' +
+              '##INFO=<ID=CLNORIGIN,Number=.,Type=String,Description="Allele Origin. One or more of the following values may be added: 0 - unknown; 1 - germline; 2 - somatic; 4 - inherited; 8 - paternal; 16 - maternal; 32 - de-novo; 64 - biparental; 128 - uniparental; 256 - not-tested; 512 - tested-inconclusive; 1073741824 - other">\n' +
+              //'##INFO=<ID=CLNSRCID,Number=.,Type=String,Description="Variant Clinical Channel IDs">\n' +
+              '##INFO=<ID=CLNSIG,Number=.,Type=String,Description="Variant Clinical Significance, 0 - Uncertain significance, 1 - not provided, 2 - Benign, 3 - Likely benign, 4 - Likely pathogenic, 5 - Pathogenic, 6 - drug response, 7 - histocompatibility, 255 - other">\n' +
+              //'##INFO=<ID=CLNDSDB,Number=.,Type=String,Description="Variant disease database name">\n' +
+              //'##INFO=<ID=CLNDSDBID,Number=.,Type=String,Description="Variant disease database ID">\n' +
+              '##INFO=<ID=CLNDBN,Number=.,Type=String,Description="Variant disease name">\n' +
+              '##INFO=<ID=CLNREVSTAT,Number=.,Type=String,Description="ClinVar Review Status, mult - Classified by multiple submitters, single - Classified by single submitter, not - Not classified by submitter, exp - Reviewed by expert panel, prof - Reviewed by professional society">\n' +
+              '##INFO=<ID=CLNACC,Number=.,Type=String,Description="Variant Accession and Versions">\n' +
+              '#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\n';
+            docs.forEach(function(record) {
+              var sao = 0;
+              var clnorigin = 0;
+              record.ReferenceClinVarAssertion.ObservedIn.forEach(function(observation) {
+                switch (observation.Sample.Origin) {
+                  case 'germline':
+                    sao |= 1;
+                    clnorigin |= 1;
+                    break;
+                  case 'somatic':
+                    sao |= 3; //NCBI's official VCF says that everything somatic is also germline
+                    clnorigin |= 2;
+                    break;
+                  case 'inherited':
+                    clnorigin |= 4;
+                    break;
+                  case 'paternal':
+                    clnorigin |= 8;
+                    break;
+                  case 'maternal':
+                    clnorigin |= 16;
+                    break;
+                  case 'de-novo':
+                    clnorigin |= 32;
+                    break;
+                  case 'biparental':
+                    clnorigin |= 64;
+                    break;
+                  case 'uniparental':
+                    clnorigin |= 128;
+                    break;
+                  case 'not-tested':
+                    clnorigin |= 256;
+                    break;
+                  case 'tested-inconclusive':
+                    clnorigin |= 512;
+                    break;
+                  case 'other':
+                    clnorigin |= 1073741824;
+                    break;
+                }
+              });
+
+              var clnsig = 1;
+              var clnrevstat;
+              if (record.ReferenceClinVarAssertion.ClinicalSignificance) {
+                switch (record.ReferenceClinVarAssertion.ClinicalSignificance.Description) {
+                  case 'Uncertain significance':
+                    clnsig = 0;
+                    break;
+                  case 'Benign':
+                    clnsig = 2;
+                    break;
+                  case 'Likely benign':
+                    clnsig = 3;
+                    break;
+                  case 'Likely pathogenic':
+                    clnsig = 4;
+                    break;
+                  case 'Pathogenic':
+                    clnsig = 5;
+                    break;
+                  case 'drug response':
+                    clnsig = 6;
+                    break;
+                  case 'histocompatibility':
+                    clnsig = 7;
+                    break;
+                  case 'other':
+                    clnsig = 255;
+                    break;
+                }
+                switch (record.ReferenceClinVarAssertion.ClinicalSignificance.ReviewStatus) {
+                  case 'Classified by multiple submitters':
+                    clnrevstat = 'mult';
+                    break;
+                  case 'Classified by single submitter':
+                    clnrevstat = 'single';
+                    break;
+                  case 'Not classified by submitter':
+                    clnrevstat = 'not';
+                    break;
+                  case 'Reviewed by expert panel':
+                    clnrevstat = 'exp';
+                    break;
+                  case 'Reviewed by professional society':
+                    clnrevstat = 'prof';
+                    break;
+                }
+              }
+
+              var omim = false;
+              var clndbn;
+              if (record.ReferenceClinVarAssertion.TraitSet && record.ReferenceClinVarAssertion.TraitSet.Trait) {
+                for (var i = 0; i < record.ReferenceClinVarAssertion.TraitSet.Trait.length && !omim; i++) {
+                  if (record.ReferenceClinVarAssertion.TraitSet.Trait[i].XRef) {
+                    for (var j = 0; j < record.ReferenceClinVarAssertion.TraitSet.Trait[i].XRef.length; j++) {
+                      if (record.ReferenceClinVarAssertion.TraitSet.Trait[i].XRef[j].DB == 'OMIM') {
+                        omim = true;
+                        break;
+                      }
+                    }
+                  }
+                  if (record.ReferenceClinVarAssertion.TraitSet.Trait[i].Name) {
+                    for (var j = 0; j < record.ReferenceClinVarAssertion.TraitSet.Trait[i].Name.length; j++) {
+                      if (record.ReferenceClinVarAssertion.TraitSet.Trait[i].Name[j].ElementValue.Type == 'Preferred') {
+                        clndbn = record.ReferenceClinVarAssertion.TraitSet.Trait[i].Name[j].ElementValue.text.replace(/ /g, '_');
+                        break;
+                      }
+                    }
+                  }
+                }
+              }
+
+              record.ReferenceClinVarAssertion.MeasureSet.Measure.forEach(function(measure) {
+                var chr = '.', pos = '.', id = '.', ref = '.', alt = '.';
+                var infos = [
+                  'SAO=' + sao,
+                  'WGT=1',
+                  'CLNORIGIN=' + clnorigin,
+                  'CLNSIG=' + clnsig,
+                  'CLNACC=' + record.ReferenceClinVarAssertion.ClinVarAccession.Acc,
+                ];
+                if (omim)
+                  infos.push('OM');
+                if (clndbn)
+                  infos.push('CLNDBN=' + clndbn);
+
+                if (measure.SequenceLocation) {
+                  for (var i = 0; i < measure.SequenceLocation.length; i++) {
+                    if (measure.SequenceLocation[i].Assembly == 'GRCh38') {
+                      if (chr == '.') {
+                        chr = measure.SequenceLocation[i].Chr;
+                        pos = measure.SequenceLocation[i].start;
+                        ref = measure.SequenceLocation[i].referenceAllele;
+                        alt = measure.SequenceLocation[i].alternateAllele;
+                        infos.push('CLNHGVS=' + measure.SequenceLocation[i].Accession);
+                      } else {
+                        if (chr != measure.SequenceLocation[i].Chr) {
+                          infos.push('CFL');
+                          break;
+                        }
+                      }
+                    }
+                  }
+                  if (measure.XRef) {
+                    for (var i = 0; i < measure.XRef.length; i++) {
+                      if (measure.XRef[i].DB == 'dbSNP') {
+                        id = measure.XRef[i].Type + measure.XRef[i].ID;
+                        if (measure.XRef[i].Type == 'rs') {
+                          infos.push('RS=' + measure.XRef[i].ID);
+                          infos.push('RSPOS=' + pos);
+                        }
+                        break;
+                      }
+                    }
+                  }
+                  if (measure.MeasureRelationship) {
+                    for (var i = 0; i < measure.MeasureRelationship.length; i++) {
+                      if (measure.MeasureRelationship[i].Type == 'variant in gene') {
+                        var id, symbol;
+                        for (var j = 0; j < measure.MeasureRelationship[i].XRef.length; j++) {
+                          if (measure.MeasureRelationship[i].XRef[j].DB == 'Gene') {
+                            id = measure.MeasureRelationship[i].XRef[j].ID;
+                            break;
+                          }
+                        }
+                        for (var j = 0; j < measure.MeasureRelationship[i].Symbol.length; j++) {
+                          if (measure.MeasureRelationship[i].Symbol[j].ElementValue.Type == 'Preferred') {
+                            symbol = measure.MeasureRelationship[i].Symbol[j].ElementValue.text;
+                            break;
+                          }
+                        }
+                        if (id && symbol)
+                          infos.push('GENEINFO=' + id + ':' + symbol);
+                        break;
+                      }
+                    }
+                  }
+                  if (measure.AttributeSet) {
+                    var ssr = 0;
+                    for (var i = 0; i < measure.AttributeSet.length; i++) {
+                      switch (measure.AttributeSet[i].Attribute.Type) {
+                        case 'Suspect':
+                          switch (measure.AttributeSet[i].Attribute.text) {
+                            case 'Paralog':
+                              ssr |= 1;
+                              break;
+                            case '1KG failed':
+                              ssr |= 16;
+                              break;
+                          }
+                          break;
+                        case 'MolecularConsequence':
+                          switch (measure.AttributeSet[i].Attribute.text) {
+                            case 'frameshift variant':
+                              infos.push('NSF');
+                              break;
+                            case 'missense variant':
+                              infos.push('NSM');
+                              break;
+                            case 'nonsense':
+                              infos.push('NSN');
+                              break;
+                            case 'synonymous variant':
+                              infos.push('SYN');
+                              break;
+                            case '3 prime UTR variant':
+                              infos.push('U3');
+                              break;
+                            case '5 prime UTR variant':
+                              infos.push('U5');
+                              break;
+                            case 'splice acceptor variant':
+                              infos.push('ASS');
+                              break;
+                            case 'splice donor variant':
+                              infos.push('DSS');
+                              break;
+                            case 'intron variant':
+                              infos.push('INT');
+                              break;
+                          }
+                          break;
+                      }
+                    }
+                    infos.push('SSR=' + ssr);
+                  }
+                }
+                output += chr + '\t' + pos + '\t' + id + '\t' + ref + '\t' + alt + '\t.\t.\t' + infos.join(';') + '\n';
+              });
+            });
+            res.set('Content-Type', 'text/plain');
             res.send(output);
-          });
+            break;
+          default:
+            res.json(docs);
         }
       });
   });

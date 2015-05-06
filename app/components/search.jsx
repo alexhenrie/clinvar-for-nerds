@@ -132,7 +132,7 @@ module.exports = React.createClass({
             Loading...
           </div>
           <div ref="stats" style={{display:'none', textAlign:'right'}}></div>
-          <iframe ref="results" style={{backgroundColor:'#F5F5F5', border:'1px solid #CCC', display:'none', flexGrow:'1'}}></iframe>
+          <iframe ref="results" style={{backgroundColor:'#F5F5F5', border:'1px solid #CCC', display:'none', flexGrow:'1', fontFamily:'monospace'}}></iframe>
           <table ref="turner" style={{width:'100%'}}>
             <tr>
               <td>
@@ -157,7 +157,11 @@ module.exports = React.createClass({
       stats.textContent = '';
     } else {
       var start = Number(this.props.query.start) || 0;
-      stats.textContent = 'Showing records ' + (start + 1) + '-' + (start + this.resultCount) + ' of ' + this.totalRecords + '. Search completed in ' + ((Date.now() - this.startTime) / 1000).toFixed(2) + ' seconds.';
+      if (this.resultCount)
+        stats.textContent = 'Showing records ' + (start + 1) + '-' + (start + this.resultCount) + ' of ' + this.totalRecords + '. ';
+      else
+        stats.textContent = '';
+      stats.textContent += 'Search completed in ' + ((Date.now() - this.startTime) / 1000).toFixed(2) + ' seconds.';
 
       var enablePrev = (start > 0);
       var enableNext = (start + this.resultCount < this.totalRecords);

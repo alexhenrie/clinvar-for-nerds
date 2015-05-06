@@ -63,6 +63,7 @@ module.exports = React.createClass({
             <label><input defaultChecked={this.props.query.strip || 1} ref="omitEmpty" type="checkbox"/> Omit empty fields</label>
             <label><input defaultChecked={this.props.query.format == 'csv'} name="format" ref="formatCsv" type="radio" value="csv"/> CSV</label>
             <label><input defaultChecked={!this.props.query.format || this.props.query.format == 'json'} name="format" ref="formatJson" type="radio" value="json"/> JSON</label>
+            <label><input defaultChecked={this.props.query.format == 'vcf'} name="format" ref="formatVcf" type="radio" value="vcf"/> VCF</label>
             <button className="btn btn-primary" type="submit">Search</button>
           </div>
         </form>
@@ -114,7 +115,10 @@ module.exports = React.createClass({
     //change the URL fragment
     this.context.router.transitionTo('search', {q: q}, {
       caseSensitive: this.refs.caseSensitive.getDOMNode().checked ? 1 : undefined,
-      format: this.refs.formatCsv.getDOMNode().checked ? 'csv' : 'json',
+      format:
+        this.refs.formatCsv.getDOMNode().checked ? 'csv' :
+        this.refs.formatVcf.getDOMNode().checked ? 'vcf' :
+        'json',
       strip: this.refs.omitEmpty.getDOMNode().checked ? 1 : undefined,
       start: start,
     });
