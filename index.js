@@ -391,21 +391,21 @@ app.get('/find', function(req, res) {
                   if (measure.MeasureRelationship) {
                     for (var i = 0; i < measure.MeasureRelationship.length; i++) {
                       if (measure.MeasureRelationship[i].Type == 'variant in gene') {
-                        var id, symbol;
+                        var geneId, geneSymbol;
                         for (var j = 0; j < measure.MeasureRelationship[i].XRef.length; j++) {
                           if (measure.MeasureRelationship[i].XRef[j].DB == 'Gene') {
-                            id = measure.MeasureRelationship[i].XRef[j].ID;
+                            geneId = measure.MeasureRelationship[i].XRef[j].ID;
                             break;
                           }
                         }
                         for (var j = 0; j < measure.MeasureRelationship[i].Symbol.length; j++) {
                           if (measure.MeasureRelationship[i].Symbol[j].ElementValue.Type == 'Preferred') {
-                            symbol = measure.MeasureRelationship[i].Symbol[j].ElementValue.text;
+                            geneSymbol = measure.MeasureRelationship[i].Symbol[j].ElementValue.text;
                             break;
                           }
                         }
-                        if (id && symbol)
-                          infos.push('GENEINFO=' + id + ':' + symbol);
+                        if (geneId && geneSymbol)
+                          infos.push('GENEINFO=' + geneId + ':' + geneSymbol);
                         break;
                       }
                     }
