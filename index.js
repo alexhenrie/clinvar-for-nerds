@@ -12,7 +12,7 @@ const RECORDS_PER_PAGE = require('./records-per-page');
  */
 function stripMongo(obj) {
   Object.keys(obj).forEach(function(key) {
-    if (key == '_id')
+    if (key == '_id' || key == '__v')
       delete obj[key]
     else if (typeof(obj[key]) != 'object')
       return;
@@ -124,16 +124,17 @@ app.get('/find', function(req, res) {
       res.status(400); //bad request
       return;
     }
+    var pipeline = [
+      {$match: q},
+      {$limit: RECORDS_PER_PAGE}, //make sure the toArray function doesn't take forever or run out of memory
+    ];
     var cursor = db.collection('clinvarsets')
-      .find(q)
-      .skip(Number(req.query.start) || 0)
-      .project({__v: 0})
-      .limit(RECORDS_PER_PAGE); //make sure the toArray function doesn't take forever or run out of memory
 
     switch (req.query.format)
     {
       case 'csv':
-        cursor.toArray(function(err, docs) {
+        pipeline.push({$skip: Number(req.query.start) || 0});
+        cursor.aggregate(pipeline).toArray(function(err, docs) {
           if (err) {
             res.status(400); //bad request
             res.send(err.toString());
@@ -178,7 +179,16 @@ app.get('/find', function(req, res) {
         });
         break;
       case 'vcf':
-        cursor.toArray(function(err, docs) {
+        pipeline.push({$unwind: '$ReferenceClinVarAssertion.MeasureSet.Measure'});
+        pipeline.push({$unwind: '$ReferenceClinVarAssertion.MeasureSet.Measure.XRef'});
+        pipeline.push({$match: {'ReferenceClinVarAssertion.MeasureSet.Measure.XRef.Type': 'rs'}});
+        pipeline.push({$match: {'ReferenceClinVarAssertion.MeasureSet.Measure.XRef.DB': 'dbSNP'}});
+        pipeline.push({$group: {
+          _id: '$ReferenceClinVarAssertion.MeasureSet.Measure.XRef.ID',
+          records: {$push: '$$ROOT'},
+        }});
+        pipeline.push({$skip: Number(req.query.start) || 0});
+        cursor.aggregate(pipeline).toArray(function(err, docs) {
           if (err) {
             res.status(400); //bad request
             res.send(err.toString());
@@ -186,7 +196,7 @@ app.get('/find', function(req, res) {
           }
 
           docs = limit(docs, false, false);
-
+//res.json(docs);return;
           var output =
             '##fileformat=VCFv4.2\n' +
             '##fileDate=' + (new Date()).toISOString().substring(0, 10).replace(/-/g, '') + '\n' +
@@ -251,133 +261,145 @@ app.get('/find', function(req, res) {
             '##INFO=<ID=CLNREVSTAT,Number=.,Type=String,Description="ClinVar Review Status, mult - Classified by multiple submitters, single - Classified by single submitter, not - Not classified by submitter, exp - Reviewed by expert panel, prof - Reviewed by professional society">\n' +
             '##INFO=<ID=CLNACC,Number=.,Type=String,Description="Variant Accession and Versions">\n' +
             '#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\n';
-          docs.forEach(function(record) {
+          docs.forEach(function(doc) {
+            var chr = '.';
+            var pos = '.';
+            var ref = '.';
+            var alt = '.';
+            var geneinfo;
             var sao = 0;
+            var ssr = 0;
+            var allWgt = [];
+            var nsf = false;
+            var nsm = false;
+            var nsn = false;
+            var syn = false;
+            var u3 = false;
+            var u5 = false;
+            var ass = false;
+            var dss = false;
+            var int = false;
+            var cfl = false;
+            var om = false;
+            var clnhgvs;
             var clnorigin = 0;
-            record.ReferenceClinVarAssertion.ObservedIn.forEach(function(observation) {
-              switch (observation.Sample.Origin) {
-                case 'germline':
-                  sao |= 1;
-                  clnorigin |= 1;
-                  break;
-                case 'somatic':
-                  sao |= 3; //NCBI's official VCF says that everything somatic is also germline
-                  clnorigin |= 2;
-                  break;
-                case 'inherited':
-                  clnorigin |= 4;
-                  break;
-                case 'paternal':
-                  clnorigin |= 8;
-                  break;
-                case 'maternal':
-                  clnorigin |= 16;
-                  break;
-                case 'de-novo':
-                  clnorigin |= 32;
-                  break;
-                case 'biparental':
-                  clnorigin |= 64;
-                  break;
-                case 'uniparental':
-                  clnorigin |= 128;
-                  break;
-                case 'not-tested':
-                  clnorigin |= 256;
-                  break;
-                case 'tested-inconclusive':
-                  clnorigin |= 512;
-                  break;
-                case 'other':
-                  clnorigin |= 1073741824;
-                  break;
-              }
-            });
+            var allClnsig = [];
+            var allClndbn = [];
+            var allClnrevstat = [];
+            var allClnacc = [];
 
-            var clnsig = 1;
-            var clnrevstat;
-            if (record.ReferenceClinVarAssertion.ClinicalSignificance) {
-              switch (record.ReferenceClinVarAssertion.ClinicalSignificance.Description) {
-                case 'Uncertain significance':
-                  clnsig = 0;
-                  break;
-                case 'Benign':
-                  clnsig = 2;
-                  break;
-                case 'Likely benign':
-                  clnsig = 3;
-                  break;
-                case 'Likely pathogenic':
-                  clnsig = 4;
-                  break;
-                case 'Pathogenic':
-                  clnsig = 5;
-                  break;
-                case 'drug response':
-                  clnsig = 6;
-                  break;
-                case 'histocompatibility':
-                  clnsig = 7;
-                  break;
-                case 'other':
-                  clnsig = 255;
-                  break;
-              }
-              switch (record.ReferenceClinVarAssertion.ClinicalSignificance.ReviewStatus) {
-                case 'Classified by multiple submitters':
-                  clnrevstat = 'mult';
-                  break;
-                case 'Classified by single submitter':
-                  clnrevstat = 'single';
-                  break;
-                case 'Not classified by submitter':
-                  clnrevstat = 'not';
-                  break;
-                case 'Reviewed by expert panel':
-                  clnrevstat = 'exp';
-                  break;
-                case 'Reviewed by professional society':
-                  clnrevstat = 'prof';
-                  break;
-              }
-            }
+            doc.records.forEach(function(record) {
+              record.ReferenceClinVarAssertion.ObservedIn.forEach(function(observation) {
+                switch (observation.Sample.Origin) {
+                  case 'germline':
+                    sao |= 1;
+                    clnorigin |= 1;
+                    break;
+                  case 'somatic':
+                    sao |= 3; //NCBI's official VCF says that everything somatic is also germline
+                    clnorigin |= 2;
+                    break;
+                  case 'inherited':
+                    clnorigin |= 4;
+                    break;
+                  case 'paternal':
+                    clnorigin |= 8;
+                    break;
+                  case 'maternal':
+                    clnorigin |= 16;
+                    break;
+                  case 'de-novo':
+                    clnorigin |= 32;
+                    break;
+                  case 'biparental':
+                    clnorigin |= 64;
+                    break;
+                  case 'uniparental':
+                    clnorigin |= 128;
+                    break;
+                  case 'not-tested':
+                    clnorigin |= 256;
+                    break;
+                  case 'tested-inconclusive':
+                    clnorigin |= 512;
+                    break;
+                  case 'other':
+                    clnorigin |= 1073741824;
+                    break;
+                }
+              }); //ObservedIn
 
-            var omim = false;
-            var clndbn;
-            if (record.ReferenceClinVarAssertion.TraitSet && record.ReferenceClinVarAssertion.TraitSet.Trait) {
-              for (var i = 0; i < record.ReferenceClinVarAssertion.TraitSet.Trait.length && !omim; i++) {
-                if (record.ReferenceClinVarAssertion.TraitSet.Trait[i].XRef) {
-                  for (var j = 0; j < record.ReferenceClinVarAssertion.TraitSet.Trait[i].XRef.length; j++) {
-                    if (record.ReferenceClinVarAssertion.TraitSet.Trait[i].XRef[j].DB == 'OMIM') {
-                      omim = true;
-                      break;
+              var clnsig = 1;
+              var clnrevstat = 'not';
+              if (record.ReferenceClinVarAssertion.ClinicalSignificance) {
+                switch (record.ReferenceClinVarAssertion.ClinicalSignificance.Description) {
+                  case 'Uncertain significance':
+                    clnsig = 0;
+                    break;
+                  case 'Benign':
+                    clnsig = 2;
+                    break;
+                  case 'Likely benign':
+                    clnsig = 3;
+                    break;
+                  case 'Likely pathogenic':
+                    clnsig = 4;
+                    break;
+                  case 'Pathogenic':
+                    clnsig = 5;
+                    break;
+                  case 'drug response':
+                    clnsig = 6;
+                    break;
+                  case 'histocompatibility':
+                    clnsig = 7;
+                    break;
+                  case 'other':
+                    clnsig = 255;
+                    break;
+                }
+                switch (record.ReferenceClinVarAssertion.ClinicalSignificance.ReviewStatus) {
+                  case 'classified by multiple submitters':
+                    clnrevstat = 'mult';
+                    break;
+                  case 'classified by single submitter':
+                    clnrevstat = 'single';
+                    break;
+                  case 'reviewed by expert panel':
+                    clnrevstat = 'exp';
+                    break;
+                  case 'reviewed by professional society':
+                    clnrevstat = 'prof';
+                    break;
+                }
+              } //ClinicalSignificance
+              allClnsig.push(clnsig);
+              allClnrevstat.push(clnrevstat);
+
+              var clndbn = 'not_provided';
+              if (record.ReferenceClinVarAssertion.TraitSet && record.ReferenceClinVarAssertion.TraitSet.Trait) {
+                for (var i = 0; i < record.ReferenceClinVarAssertion.TraitSet.Trait.length; i++) {
+                  if (record.ReferenceClinVarAssertion.TraitSet.Trait[i].XRef) {
+                    for (var j = 0; j < record.ReferenceClinVarAssertion.TraitSet.Trait[i].XRef.length && !om; j++) {
+                      if (record.ReferenceClinVarAssertion.TraitSet.Trait[i].XRef[j].DB == 'OMIM')
+                        om = true;
+                    }
+                  }
+                  if (record.ReferenceClinVarAssertion.TraitSet.Trait[i].Name) {
+                    for (var j = 0; j < record.ReferenceClinVarAssertion.TraitSet.Trait[i].Name.length; j++) {
+                      if (record.ReferenceClinVarAssertion.TraitSet.Trait[i].Name[j].ElementValue.Type == 'Preferred') {
+                        clndbn = record.ReferenceClinVarAssertion.TraitSet.Trait[i].Name[j].ElementValue.text.replace(/ /g, '_');
+                        break;
+                      }
                     }
                   }
                 }
-                if (record.ReferenceClinVarAssertion.TraitSet.Trait[i].Name) {
-                  for (var j = 0; j < record.ReferenceClinVarAssertion.TraitSet.Trait[i].Name.length; j++) {
-                    if (record.ReferenceClinVarAssertion.TraitSet.Trait[i].Name[j].ElementValue.Type == 'Preferred') {
-                      clndbn = record.ReferenceClinVarAssertion.TraitSet.Trait[i].Name[j].ElementValue.text.replace(/ /g, '_');
-                      break;
-                    }
-                  }
-                }
-              }
-            }
+              } //Trait
+              allClndbn.push(clndbn);
 
-            record.ReferenceClinVarAssertion.MeasureSet.Measure.forEach(function(measure) {
-              var chr = '.', pos = '.', id = '.', ref = '.', alt = '.';
-              var infos = [
-                'SAO=' + sao,
-                'WGT=1',
-                'CLNORIGIN=' + clnorigin,
-                'CLNSIG=' + clnsig,
-                'CLNACC=' + record.ReferenceClinVarAssertion.ClinVarAccession.Acc,
-              ];
-              if (omim)
-                infos.push('OM');
-              if (clndbn)
-                infos.push('CLNDBN=' + clndbn);
+              allClnacc.push(record.ReferenceClinVarAssertion.ClinVarAccession.Acc);
+
+              var measure = record.ReferenceClinVarAssertion.MeasureSet.Measure;
 
               if (measure.SequenceLocation) {
                 for (var i = 0; i < measure.SequenceLocation.length; i++) {
@@ -387,27 +409,18 @@ app.get('/find', function(req, res) {
                       pos = measure.SequenceLocation[i].start;
                       ref = measure.SequenceLocation[i].referenceAllele;
                       alt = measure.SequenceLocation[i].alternateAllele;
-                      infos.push('CLNHGVS=' + measure.SequenceLocation[i].Accession);
+                      clnhgvs = measure.SequenceLocation[i].Accession;
                     } else {
                       if (chr != measure.SequenceLocation[i].Chr) {
-                        infos.push('CFL');
+                        cfl = true;
                         break;
                       }
                     }
                   }
                 }
-                if (measure.XRef) {
-                  for (var i = 0; i < measure.XRef.length; i++) {
-                    if (measure.XRef[i].DB == 'dbSNP') {
-                      id = measure.XRef[i].Type + measure.XRef[i].ID;
-                      if (measure.XRef[i].Type == 'rs') {
-                        infos.push('RS=' + measure.XRef[i].ID);
-                        infos.push('RSPOS=' + pos);
-                      }
-                      break;
-                    }
-                  }
-                }
+              } //SequenceLocation
+
+              if (!geneinfo) {
                 if (measure.MeasureRelationship) {
                   for (var i = 0; i < measure.MeasureRelationship.length; i++) {
                     if (measure.MeasureRelationship[i].Type == 'variant in gene') {
@@ -425,70 +438,96 @@ app.get('/find', function(req, res) {
                         }
                       }
                       if (geneId && geneSymbol)
-                        infos.push('GENEINFO=' + geneId + ':' + geneSymbol);
+                        geneinfo = geneId + ':' + geneSymbol;
                       break;
                     }
                   }
-                }
-                if (measure.AttributeSet) {
-                  var ssr = 0;
-                  for (var i = 0; i < measure.AttributeSet.length; i++) {
-                    switch (measure.AttributeSet[i].Attribute.Type) {
-                      case 'Suspect':
-                        switch (measure.AttributeSet[i].Attribute.text) {
-                          case 'Paralog':
-                            ssr |= 1;
-                            break;
-                          case '1KG failed':
-                            ssr |= 16;
-                            break;
-                        }
-                        break;
-                      case 'MolecularConsequence':
-                        switch (measure.AttributeSet[i].Attribute.text) {
-                          case 'frameshift variant':
-                            infos.push('NSF');
-                            break;
-                          case 'missense variant':
-                            infos.push('NSM');
-                            break;
-                          case 'nonsense':
-                            infos.push('NSN');
-                            break;
-                          case 'synonymous variant':
-                            infos.push('SYN');
-                            break;
-                          case '3 prime UTR variant':
-                            infos.push('U3');
-                            break;
-                          case '5 prime UTR variant':
-                            infos.push('U5');
-                            break;
-                          case 'splice acceptor variant':
-                            infos.push('ASS');
-                            break;
-                          case 'splice donor variant':
-                            infos.push('DSS');
-                            break;
-                          case 'intron variant':
-                            infos.push('INT');
-                            break;
-                        }
-                        break;
-                    }
+                } //MeasureRelationship
+              } //geneinfo
+
+              if (measure.AttributeSet) {
+                for (var i = 0; i < measure.AttributeSet.length; i++) {
+                  switch (measure.AttributeSet[i].Attribute.Type) {
+                    case 'Suspect':
+                      switch (measure.AttributeSet[i].Attribute.text) {
+                        case 'Paralog':
+                          ssr |= 1;
+                          break;
+                        case '1KG failed':
+                          ssr |= 16;
+                          break;
+                      }
+                      break;
+                    case 'MolecularConsequence':
+                      switch (measure.AttributeSet[i].Attribute.text) {
+                        case 'frameshift variant':
+                          nsf = true;
+                          break;
+                        case 'missense variant':
+                          nsm = true;
+                          break;
+                        case 'nonsense':
+                          nsn = true;
+                          break;
+                        case 'synonymous variant':
+                          syn = true;
+                          break;
+                        case '3 prime UTR variant':
+                          u3 = true;
+                          break;
+                        case '5 prime UTR variant':
+                          u5 = true;
+                          break;
+                        case 'splice acceptor variant':
+                          ass = true;
+                          break;
+                        case 'splice donor variant':
+                          dss = true;
+                          break;
+                        case 'intron variant':
+                          int = true;
+                          break;
+                      }
+                      break;
                   }
-                  infos.push('SSR=' + ssr);
                 }
-              }
-              output += chr + '\t' + pos + '\t' + id + '\t' + ref + '\t' + alt + '\t.\t.\t' + infos.join(';') + '\n';
+              } //AttributeSet
             });
+
+            var infos = [];
+                                       infos.push('RS=' + doc._id);
+            if (pos != '.')            infos.push('RSPOS=' + pos);
+            if (geneinfo)              infos.push('GENEINFO=' + geneinfo);
+                                       infos.push('SAO=' + sao);
+                                       infos.push('SSR=' + ssr);
+            if (allWgt.length)         infos.push('WGT=' + allWgt.join('|'));
+            if (nsf)                   infos.push('NSF');
+            if (nsm)                   infos.push('NSM');
+            if (nsn)                   infos.push('NSN');
+            if (syn)                   infos.push('SYN');
+            if (u3)                    infos.push('U3');
+            if (u5)                    infos.push('U5');
+            if (ass)                   infos.push('ASS');
+            if (dss)                   infos.push('DSS');
+            if (int)                   infos.push('INT');
+            if (cfl)                   infos.push('CFL');
+            if (om)                    infos.push('OM');
+            if (clnhgvs)               infos.push('CLNHGVS=' + clnhgvs);
+                                       infos.push('CLNORIGIN=' + clnorigin);
+            if (allClnsig.length)      infos.push('CLNSIG=' + allClnsig.join('|'));
+            if (allClndbn.length)      infos.push('CLNDBN=' + allClndbn.join('|'));
+            if (allClnrevstat.length)  infos.push('CLNREVSTAT=' + allClnrevstat.join('|'));
+            if (allClnacc.length)      infos.push('CLNACC=' + allClnacc.join('|'));
+
+            output += chr + '\t' + pos + '\trs' + doc._id + '\t' + ref + '\t' + alt + '\t.\t.\t' + infos.join(';') + '\n';
           });
           res.set('Content-Type', 'text/plain');
           res.send(output);
         });
         break;
       default:
-        cursor.toArray(function(err, docs) {
+        pipeline.push({$skip: Number(req.query.start) || 0});
+        cursor.aggregate(pipeline).toArray(function(err, docs) {
           if (err) {
             res.status(400); //bad request
             res.send(err.toString());
