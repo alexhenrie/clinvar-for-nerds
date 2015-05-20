@@ -122,5 +122,6 @@ module.exports = React.createClass({
       strip: this.refs.omitEmpty.getDOMNode().checked ? 1 : undefined,
       start: start,
     });
+    this.forceUpdate(); //rerun the search even if the parameters have not changed
   },
 });
