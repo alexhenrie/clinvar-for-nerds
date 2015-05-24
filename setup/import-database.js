@@ -73,7 +73,7 @@ MongoClient.connect('mongodb://localhost:27017/clinvar_nerds', function(err, db)
       });
 
       var count = 0;
-      console.log('Adding ClinVarSet elements (approximately 150,000 of them)...');
+      console.log('Adding ClinVarSet elements (approximately 160,000 of them)...');
       xmlStream.on('endElement: ClinVarSet', function(item) {
         moveAttributes(item);
         var clinVarSet = new ClinVarSet(item);
