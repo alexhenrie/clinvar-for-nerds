@@ -196,7 +196,7 @@ app.get('/find', function(req, res) {
           }
 
           docs = limit(docs, false, false);
-//res.json(docs);return;
+
           var output =
             '##fileformat=VCFv4.2\n' +
             '##fileDate=' + (new Date()).toISOString().substring(0, 10).replace(/-/g, '') + '\n' +
