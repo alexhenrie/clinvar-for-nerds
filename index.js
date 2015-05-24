@@ -411,6 +411,7 @@ app.get('/find', function(req, res) {
                       pos = measure.SequenceLocation[j].start;
                       ref = measure.SequenceLocation[j].referenceAllele;
                       alt = measure.SequenceLocation[j].alternateAllele.replace('-', '*');
+                      if (alt == ref) alt = '.';
                       clnhgvs = measure.SequenceLocation[j].Accession;
                     } else {
                       if (chr != measure.SequenceLocation[j].Chr) {
