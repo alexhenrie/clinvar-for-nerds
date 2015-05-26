@@ -90,10 +90,10 @@ module.exports = React.createClass({
       var operator = restrictions[i].operator;
       var operand = restrictions[i].operand;
 
-      if (operator == 'exists') {
-        operand = 1;
-      } else if (!property) {
+      if (!property) {
         continue;
+      } else if (operator == 'exists') {
+        operand = 1;
       } else if (operand != '') {
         //turn anything that looks like a number into a number
         var operandAsNumber = Number(operand);
