@@ -26,7 +26,7 @@ function stripMongo(obj) {
  */
 function stripEmpty(obj) {
   Object.keys(obj).forEach(function(key) {
-    if (typeof(obj[key]) != 'object')
+    if (typeof(obj[key]) != 'object' || obj[key] instanceof Date)
       return;
 
     stripEmpty(obj[key]);
