@@ -529,6 +529,63 @@ app.get('/find', function(req, res) {
           res.send(output);
         });
         break;
+      case 'json-ld':
+        cursor.aggregate(pipeline).toArray(function(err, docs) {
+          if (err) {
+            res.status(400); //bad request
+            res.send(err.toString());
+            return;
+          }
+
+          docs = limit(docs, true, req.query.strip);
+
+          var ld = [];
+
+          docs.forEach(function(doc) {
+            var canonicalAlleles = [];
+            doc.ReferenceClinVarAssertion.MeasureSet.Measure.forEach(function(measure) {
+              for (var i = 0; i < measure.SequenceLocation.length; i++) {
+                if (measure.SequenceLocation[i].Assembly == 'GRCh38') {
+                  canonicalAlleles.push({
+                    identifier: measure.SequenceLocation[i].Accession,
+                  });
+                  break;
+                }
+              }
+            });
+
+            doc.ClinVarAssertion.forEach(function(scv) {
+              var versionedAlleles = canonicalAlleles.map(function(allele) {
+                allele.id = scv.ClinVarAccession.Acc;
+                allele.version = scv.ClinVarAccession.Version;
+                return allele;
+              });
+
+              var canonicalAllele;
+              if (canonicalAlleles.length == 1) {
+                canonicalAllele = versionedAlleles[0];
+                canonicalAllele.complexity = 'simple';
+              } else {
+                canonicalAllele = {
+                  complexity: 'complex',
+                  id: scv.ClinVarAccession.Acc,
+                  version: scv.ClinVarAccession.Version,
+                  nested: versionedAlleles,
+                };
+              }
+
+              var provenance = {
+                recorded: scv.ClinVarSubmissionID.submitterDate,
+                target: canonicalAllele,
+              };
+
+              ld.push(provenance);
+            });
+          });
+
+          res.json(ld);
+        });
+        break;
       default:
         pipeline.push({$skip: Number(req.query.start) || 0});
         cursor.aggregate(pipeline).toArray(function(err, docs) {
