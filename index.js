@@ -288,9 +288,7 @@ app.get('/find', function(req, res) {
             var allClnrevstat = [];
             var allClnacc = [];
 
-            for (var i = 0; i < doc.records.length; i++) {
-              var record = doc.records[i];
-
+            doc.records.forEach(function(record) {
               record.ReferenceClinVarAssertion.ObservedIn.forEach(function(observation) {
                 switch (observation.Sample.Origin) {
                   case 'germline':
@@ -380,17 +378,19 @@ app.get('/find', function(req, res) {
 
               var clndbn = 'not_provided';
               if (record.ReferenceClinVarAssertion.TraitSet && record.ReferenceClinVarAssertion.TraitSet.Trait) {
-                for (var j = 0; j < record.ReferenceClinVarAssertion.TraitSet.Trait.length; j++) {
-                  if (record.ReferenceClinVarAssertion.TraitSet.Trait[j].XRef) {
-                    for (var k = 0; k < record.ReferenceClinVarAssertion.TraitSet.Trait[j].XRef.length && !om; k++) {
-                      if (record.ReferenceClinVarAssertion.TraitSet.Trait[j].XRef[k].DB == 'OMIM')
+                for (var i = 0; i < record.ReferenceClinVarAssertion.TraitSet.Trait.length; i++) {
+                  if (record.ReferenceClinVarAssertion.TraitSet.Trait[i].XRef) {
+                    for (var j = 0; j < record.ReferenceClinVarAssertion.TraitSet.Trait[i].XRef.length && !om; j++) {
+                      if (record.ReferenceClinVarAssertion.TraitSet.Trait[i].XRef[j].DB == 'OMIM') {
                         om = true;
+                        break;
+                      }
                     }
                   }
-                  if (record.ReferenceClinVarAssertion.TraitSet.Trait[j].Name) {
-                    for (var k = 0; j < record.ReferenceClinVarAssertion.TraitSet.Trait[j].Name.length; k++) {
-                      if (record.ReferenceClinVarAssertion.TraitSet.Trait[j].Name[k].ElementValue.Type == 'Preferred') {
-                        clndbn = record.ReferenceClinVarAssertion.TraitSet.Trait[j].Name[k].ElementValue.text.replace(/ /g, '_');
+                  if (record.ReferenceClinVarAssertion.TraitSet.Trait[i].Name) {
+                    for (var j = 0; j < record.ReferenceClinVarAssertion.TraitSet.Trait[i].Name.length; j++) {
+                      if (record.ReferenceClinVarAssertion.TraitSet.Trait[i].Name[j].ElementValue.Type == 'Preferred') {
+                        clndbn = record.ReferenceClinVarAssertion.TraitSet.Trait[i].Name[j].ElementValue.text.replace(/ /g, '_');
                         break;
                       }
                     }
@@ -399,44 +399,45 @@ app.get('/find', function(req, res) {
               } //Trait
               allClndbn.push(clndbn);
 
-              allClnacc.push(record.ReferenceClinVarAssertion.ClinVarAccession.Acc + '.' + (i + 1));
+              allClnacc.push(record.ReferenceClinVarAssertion.ClinVarAccession.Acc + '.' + record.ReferenceClinVarAssertion.ClinVarAccession.Version);
 
               var measure = record.ReferenceClinVarAssertion.MeasureSet.Measure;
 
               if (measure.SequenceLocation) {
-                for (var j = 0; j < measure.SequenceLocation.length; j++) {
-                  if (measure.SequenceLocation[j].Assembly == 'GRCh38') {
+                for (var i = 0; i < measure.SequenceLocation.length; i++) {
+                  if (measure.SequenceLocation[i].Assembly == 'GRCh38') {
                     if (chr == '.') {
-                      chr = measure.SequenceLocation[j].Chr;
-                      pos = measure.SequenceLocation[j].start;
-                      ref = measure.SequenceLocation[j].referenceAllele;
-                      alt = measure.SequenceLocation[j].alternateAllele.replace('-', '*');
+                      chr = measure.SequenceLocation[i].Chr;
+                      pos = measure.SequenceLocation[i].start;
+                      ref = measure.SequenceLocation[i].referenceAllele;
+                      alt = measure.SequenceLocation[i].alternateAllele.replace('-', '*');
                       if (alt == ref) alt = '.';
-                      clnhgvs = measure.SequenceLocation[j].Accession;
+                      clnhgvs = measure.SequenceLocation[i].Accession;
                     } else {
-                      if (chr != measure.SequenceLocation[j].Chr) {
+                      if (chr != measure.SequenceLocation[i].Chr) {
                         cfl = true;
                         break;
                       }
                     }
+                    break;
                   }
                 }
               } //SequenceLocation
 
               if (!geneinfo) {
                 if (measure.MeasureRelationship) {
-                  for (var j = 0; j < measure.MeasureRelationship.length; j++) {
-                    if (measure.MeasureRelationship[j].Type == 'variant in gene') {
+                  for (var i = 0; i < measure.MeasureRelationship.length; i++) {
+                    if (measure.MeasureRelationship[i].Type == 'variant in gene') {
                       var geneId, geneSymbol;
-                      for (var k = 0; k < measure.MeasureRelationship[j].XRef.length; k++) {
-                        if (measure.MeasureRelationship[j].XRef[k].DB == 'Gene') {
-                          geneId = measure.MeasureRelationship[j].XRef[k].ID;
+                      for (var j = 0; j < measure.MeasureRelationship[i].XRef.length; j++) {
+                        if (measure.MeasureRelationship[i].XRef[j].DB == 'Gene') {
+                          geneId = measure.MeasureRelationship[i].XRef[j].ID;
                           break;
                         }
                       }
-                      for (var k = 0; k < measure.MeasureRelationship[j].Symbol.length; k++) {
-                        if (measure.MeasureRelationship[j].Symbol[k].ElementValue.Type == 'Preferred') {
-                          geneSymbol = measure.MeasureRelationship[j].Symbol[k].ElementValue.text;
+                      for (var j = 0; j < measure.MeasureRelationship[i].Symbol.length; j++) {
+                        if (measure.MeasureRelationship[i].Symbol[j].ElementValue.Type == 'Preferred') {
+                          geneSymbol = measure.MeasureRelationship[i].Symbol[j].ElementValue.text;
                           break;
                         }
                       }
@@ -449,10 +450,10 @@ app.get('/find', function(req, res) {
               } //geneinfo
 
               if (measure.AttributeSet) {
-                for (var j = 0; j < measure.AttributeSet.length; j++) {
-                  switch (measure.AttributeSet[j].Attribute.Type) {
+                for (var i = 0; i < measure.AttributeSet.length; i++) {
+                  switch (measure.AttributeSet[i].Attribute.Type) {
                     case 'Suspect':
-                      switch (measure.AttributeSet[j].Attribute.text) {
+                      switch (measure.AttributeSet[i].Attribute.text) {
                         case 'Paralog':
                           ssr |= 1;
                           break;
@@ -462,7 +463,7 @@ app.get('/find', function(req, res) {
                       }
                       break;
                     case 'MolecularConsequence':
-                      switch (measure.AttributeSet[j].Attribute.text) {
+                      switch (measure.AttributeSet[i].Attribute.text) {
                         case 'frameshift variant':
                           nsf = true;
                           break;
@@ -495,7 +496,7 @@ app.get('/find', function(req, res) {
                   }
                 }
               } //AttributeSet
-            }
+            });
 
             var infos = [];
                                        infos.push('RS=' + doc._id);
