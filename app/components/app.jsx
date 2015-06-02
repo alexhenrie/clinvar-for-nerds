@@ -4,6 +4,8 @@ var Router = require('react-router');
 
 var RouteHandler = Router.RouteHandler;
 
+var clinvarSchemaFlat = require ('../../models/clinvar-schema-flat');
+
 const RECORDS_PER_PAGE = require('../../records-per-page');
 
 module.exports = React.createClass({
@@ -94,8 +96,8 @@ module.exports = React.createClass({
         continue;
       } else if (operator == 'exists') {
         operand = 1;
-      } else if (operand != '') {
-        //turn anything that looks like a number into a number
+      } else if (clinvarSchemaFlat[property] == Number) {
+        //make sure numeric operands aren't surrounded by quotation marks
         var operandAsNumber = Number(operand);
         if (!isNaN(operandAsNumber))
           operand = operandAsNumber;

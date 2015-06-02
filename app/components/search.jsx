@@ -1,3 +1,4 @@
+var clinvarSchemaFlat = require ('../../models/clinvar-schema-flat');
 var React = require('react');
 var request = require('superagent');
 
@@ -65,9 +66,16 @@ module.exports = React.createClass({
       this.setState({url: 'data:text/plain,Syntax error in query.'});
       return;
     }
-    var operatorError = false;
-    Object.keys(q).forEach(function(property) {
-      if (typeof q[property] == 'string' && !caseSensitive) {
+    var properties = Object.keys(q);
+    for (var i = 0; i < properties.length; i++) {
+      var property = properties[i];
+      if (!clinvarSchemaFlat[property]) {
+        this.setState({url: 'data:text/plain,The property ' + property + ' does not exist.'});
+        return;
+      } else if (!q[property].$exists && q[property].constructor != clinvarSchemaFlat[property]) {
+        this.setState({url: 'data:text/plain,The property ' + property + ' must be a ' + typeof clinvarSchemaFlat[property]() + '.'});
+        return;
+      } else if (typeof q[property] == 'string' && !caseSensitive) {
         q[property] = {
           $regex: '^' + escapeRE(q[property]) + '$',
           $options: 'i',
@@ -75,7 +83,6 @@ module.exports = React.createClass({
       } else if (q[property].$text) {
         if (typeof q[property].$text != 'string') {
           this.setState({url: 'data:text/plain,The "contains" operator cannot be used with numeric types.'});
-          operatorError = true;
           return;
         }
         q[property] = {
@@ -85,7 +92,6 @@ module.exports = React.createClass({
       } else if (q[property].$ntext) {
         if (typeof q[property].$text != 'string') {
           this.setState({url: 'data:text/plain,The "does not contain" operator cannot be used with numeric types.'});
-          operatorError = true;
           return;
         }
         q[property] = {$not:{
@@ -93,9 +99,7 @@ module.exports = React.createClass({
           $options: caseSensitive ? undefined : 'i',
         }};
       }
-    }.bind(this));
-
-    if (operatorError) return;
+    }
 
     var q = JSON.stringify(q) + '&format=' + props.query.format;
     if (props.query.strip)
