@@ -542,44 +542,84 @@ app.get('/find', function(req, res) {
           var ld = [];
 
           docs.forEach(function(doc) {
-            var canonicalAlleles = [];
+            var simpleAlleles = [];
             doc.ReferenceClinVarAssertion.MeasureSet.Measure.forEach(function(measure) {
-              for (var i = 0; i < measure.SequenceLocation.length; i++) {
-                if (measure.SequenceLocation[i].Assembly == 'GRCh38') {
-                  canonicalAlleles.push({
-                    identifier: measure.SequenceLocation[i].Accession,
-                  });
-                  break;
+              var changeTypeTable = {
+                'Insertion':                 'insertion',
+                'Deletion':                  'deletion',
+                'single nucleotide variant': 'substitution',
+                //'Duplication':               '',
+                'Indel':                     'indel',
+                //'Variation':                 '',
+                'copy number gain':          'copy_number_variation',
+                'copy number loss':          'copy_number_variation',
+              };
+              var simpleAllele = {
+                '@context': 'https://raw.githubusercontent.com/tnavatar/clingen-data-model/master/source/main/resources/example-jsonld/SimpleAllele.jsonld',
+                '@type': 'SimpleAllele',
+                canonicalAllele: undefined,
+                primaryNucleotideChangeType: changeTypeTable[measure.Type],
+                simpleAlleleType: 'nucleotide',
+              };
+              if (measure.SequenceLocation) {
+                for (var i = 0; i < measure.SequenceLocation.length; i++) {
+                  if (measure.SequenceLocation[i].Assembly == 'GRCh38') {
+                    simpleAllele.allele = measure.SequenceLocation[i].alternateAllele.replace('-', '*');
+                    simpleAllele.identifier = measure.SequenceLocation[i].Accession;
+                    simpleAllele.referenceCoordinate = {
+                      start: measure.SequenceLocation[i].start,
+                      end: measure.SequenceLocation[i].stop,
+                      ref: measure.SequenceLocation[i].referenceAllele,
+                    };
+                    break;
+                  }
                 }
               }
+              simpleAlleles.push(simpleAllele);
             });
 
             doc.ClinVarAssertion.forEach(function(scv) {
-              var versionedAlleles = canonicalAlleles.map(function(allele) {
-                allele.id = scv.ClinVarAccession.Acc;
-                allele.version = scv.ClinVarAccession.Version;
-                return allele;
-              });
+              var id = req.protocol + '://' + req.headers.host + '/find?q={"ID":' + scv.ID + '}';
 
-              var canonicalAllele;
-              if (canonicalAlleles.length == 1) {
-                canonicalAllele = versionedAlleles[0];
-                canonicalAllele.complexity = 'simple';
-              } else {
-                canonicalAllele = {
-                  complexity: 'complex',
+              var canonicalAlleles = [];
+              for (var i = 0; i < simpleAlleles.length; i++) {
+                canonicalAlleles.push({
+                  '@context': 'https://raw.githubusercontent.com/tnavatar/clingen-data-model/master/source/main/resources/example-jsonld/CanonicalAllele.jsonld',
+                  '@id': undefined,
+                  '@type': 'CanonicalAllele',
+                  complexity: 'simple',
                   id: scv.ClinVarAccession.Acc,
+                  identifier: simpleAlleles[i].identifier,
                   version: scv.ClinVarAccession.Version,
-                  nested: versionedAlleles,
-                };
+                });
+                simpleAlleles[i].canonicalAllele = id;
               }
 
-              var provenance = {
-                recorded: scv.ClinVarSubmissionID.submitterDate,
-                target: canonicalAllele,
-              };
+              if (canonicalAlleles.length == 1) {
+                canonicalAlleles[0]['@id'] = id;
+                ld.push(canonicalAlleles[0]);
+              } else {
+                for (var i = 0; i < canonicalAlleles.length; i++) {
+                  canonicalAlleles[i]['@id'] = simpleAlleles[i].canonicalAllele = id + '&i=' + i;
+                }
+                ld.push({
+                  '@context': 'https://raw.githubusercontent.com/tnavatar/clingen-data-model/master/source/main/resources/example-jsonld/CanonicalAllele.jsonld',
+                  '@id': id,
+                  '@type': 'CanonicalAllele',
+                  complexity: 'complex',
+                  id: scv.ClinVarAccession.Acc,
+                  nested: canonicalAlleles,
+                  version: scv.ClinVarAccession.Version,
+                });
+              }
 
-              ld.push(provenance);
+              ld.push.apply(ld, simpleAlleles);
+
+              ld.push({
+                '@type': 'Provenance',
+                recorded: scv.ClinVarSubmissionID.submitterDate,
+                target: [id],
+              });
             });
           });
 
