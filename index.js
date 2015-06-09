@@ -540,10 +540,14 @@ app.get('/find', function(req, res) {
           docs = limit(docs, true, req.query.strip);
 
           var ld = [];
+          var referenceSequences = [];
 
           docs.forEach(function(doc) {
-            var simpleAlleles = [];
+            var id = req.protocol + '://' + req.headers.host + '/find?q={"ID":' + doc.ID + '}';
+            var simpleAlleles = []; //an array of arrays, grouped first by allele and second by reference sequence
+            var alleleIndex = 0;
             doc.ReferenceClinVarAssertion.MeasureSet.Measure.forEach(function(measure) {
+              simpleAlleles.push([]);
               var changeTypeTable = {
                 'Insertion':                 'insertion',
                 'Deletion':                  'deletion',
@@ -554,66 +558,107 @@ app.get('/find', function(req, res) {
                 'copy number gain':          'copy_number_variation',
                 'copy number loss':          'copy_number_variation',
               };
-              var simpleAllele = {
-                '@context': 'https://raw.githubusercontent.com/tnavatar/clingen-data-model/master/source/main/resources/example-jsonld/SimpleAllele.jsonld',
-                '@type': 'SimpleAllele',
-                canonicalAllele: undefined,
-                primaryNucleotideChangeType: changeTypeTable[measure.Type],
-                simpleAlleleType: 'nucleotide',
-              };
               if (measure.SequenceLocation) {
                 for (var i = 0; i < measure.SequenceLocation.length; i++) {
-                  if (measure.SequenceLocation[i].Assembly == 'GRCh38') {
-                    simpleAllele.allele = measure.SequenceLocation[i].alternateAllele.replace('-', '*');
-                    simpleAllele.identifier = measure.SequenceLocation[i].Accession;
-                    simpleAllele.referenceCoordinate = {
-                      start: measure.SequenceLocation[i].start,
-                      end: measure.SequenceLocation[i].stop,
+                  var referenceSequence = {
+                    '@context': 'https://raw.githubusercontent.com/tnavatar/clingen-data-model/master/source/main/resources/example-jsonld/ReferenceSequence.jsonld',
+                    '@id': 'http://www.ncbi.nlm.nih.gov/nuccore/' + measure.SequenceLocation[i].Accession,
+                    '@type': 'ReferenceSequence',
+                    chromosome: measure.SequenceLocation[i].Chr,
+                    identifier: measure.SequenceLocation[i].Accession,
+                    referenceSequenceType: 'chromosome',
+                  };
+                  var simpleAllele = {
+                    '@context': 'https://raw.githubusercontent.com/tnavatar/clingen-data-model/master/source/main/resources/example-jsonld/SimpleAllele.jsonld',
+                    '@id': id + '&ldmeta=simpleAllele' + (alleleIndex++),
+                    '@type': 'SimpleAllele',
+                    allele: measure.SequenceLocation[i].alternateAllele.replace('-', '*'),
+                    canonicalAllele: undefined,
+                    primaryNucleotideChangeType: changeTypeTable[measure.Type],
+                    referenceCoordinate: {
+                      start: measure.SequenceLocation[i].start - 1,
+                      end: measure.SequenceLocation[i].stop - 1,
                       ref: measure.SequenceLocation[i].referenceAllele,
-                    };
-                    break;
+                      referenceSequence: referenceSequence['@id'],
+                    },
+                    simpleAlleleType: 'nucleotide',
+                  };
+                  var newReferenceSequence = true;
+                  for (var j = 0; j < referenceSequences.length; j++) {
+                    if (referenceSequences[j]['@id'] == referenceSequence['@id']) {
+                      newReferenceSequence = false;
+                      break;
+                    }
                   }
+                  if (newReferenceSequence) {
+                    referenceSequences.push(referenceSequence);
+                  }
+                  simpleAlleles[simpleAlleles.length - 1].push(simpleAllele);
                 }
+              } else {
+                var simpleAllele = {
+                  '@context': 'https://raw.githubusercontent.com/tnavatar/clingen-data-model/master/source/main/resources/example-jsonld/SimpleAllele.jsonld',
+                  '@id': id + '&ldmeta=simpleAllele' + (alleleIndex++),
+                  '@type': 'SimpleAllele',
+                  canonicalAllele: undefined,
+                  primaryNucleotideChangeType: changeTypeTable[measure.Type],
+                  simpleAlleleType: 'nucleotide',
+                };
+                simpleAlleles[simpleAlleles.length - 1].push(simpleAllele);
               }
-              simpleAlleles.push(simpleAllele);
             });
 
             doc.ClinVarAssertion.forEach(function(scv) {
-              var id = req.protocol + '://' + req.headers.host + '/find?q={"ID":' + scv.ID + '}';
-
               var canonicalAlleles = [];
               for (var i = 0; i < simpleAlleles.length; i++) {
                 canonicalAlleles.push({
                   '@context': 'https://raw.githubusercontent.com/tnavatar/clingen-data-model/master/source/main/resources/example-jsonld/CanonicalAllele.jsonld',
                   '@id': undefined,
                   '@type': 'CanonicalAllele',
+                  active: true,
                   complexity: 'simple',
-                  id: scv.ClinVarAccession.Acc,
+                  id: undefined,
                   identifier: simpleAlleles[i].identifier,
-                  version: scv.ClinVarAccession.Version,
+                  version: undefined,
                 });
-                simpleAlleles[i].canonicalAllele = id;
               }
 
               if (canonicalAlleles.length == 1) {
                 canonicalAlleles[0]['@id'] = id;
-                ld.push(canonicalAlleles[0]);
+                canonicalAlleles[0].id = scv.ClinVarAccession.Acc;
+                canonicalAlleles[0].version = scv.ClinVarAccession.Version;
+                for (var i = 0; i < simpleAlleles[0].length; i++) {
+                  simpleAlleles[0][i].canonicalAllele = id;
+                }
               } else {
+                var nestedIds = [];
                 for (var i = 0; i < canonicalAlleles.length; i++) {
-                  canonicalAlleles[i]['@id'] = simpleAlleles[i].canonicalAllele = id + '&i=' + i;
+                  canonicalAlleles[i]['@id'] = id + '&ldmeta=canonicalAllele' + i;
+                  canonicalAlleles[i].composite = id;
+                  canonicalAlleles[i].relatedSimpleAllele = simpleAlleles[i].map(function(simpleAllele) {
+                    return simpleAllele['@id'];
+                  });
+                  for (var j = 0; j < simpleAlleles[i].length; j++) {
+                    simpleAlleles[i][j].canonicalAllele = canonicalAlleles[i]['@id'];
+                  }
+                  nestedIds.push(canonicalAlleles[i]['@id']);
                 }
                 ld.push({
                   '@context': 'https://raw.githubusercontent.com/tnavatar/clingen-data-model/master/source/main/resources/example-jsonld/CanonicalAllele.jsonld',
                   '@id': id,
                   '@type': 'CanonicalAllele',
+                  active: true,
                   complexity: 'complex',
                   id: scv.ClinVarAccession.Acc,
-                  nested: canonicalAlleles,
+                  nested: nestedIds,
                   version: scv.ClinVarAccession.Version,
                 });
               }
+              ld.push.apply(ld, canonicalAlleles);
 
-              ld.push.apply(ld, simpleAlleles);
+              simpleAlleles.forEach(function(simpleAlleles) {
+                ld.push.apply(ld, simpleAlleles);
+              });
 
               ld.push({
                 '@type': 'Provenance',
@@ -622,6 +667,8 @@ app.get('/find', function(req, res) {
               });
             });
           });
+
+          ld.push.apply(ld, referenceSequences);
 
           res.json(ld);
         });
