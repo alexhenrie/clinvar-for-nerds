@@ -72,7 +72,7 @@ module.exports = React.createClass({
       if (!clinvarSchemaFlat[property]) {
         this.setState({url: 'data:text/plain,The property ' + property + ' does not exist.'});
         return;
-      } else if (!q[property].$exists && q[property].constructor != clinvarSchemaFlat[property]) {
+      } else if (typeof q[property] != 'object' && q[property].constructor != clinvarSchemaFlat[property]) {
         this.setState({url: 'data:text/plain,The property ' + property + ' must be a ' + typeof clinvarSchemaFlat[property]() + '.'});
         return;
       } else if (typeof q[property] == 'string' && !caseSensitive) {
