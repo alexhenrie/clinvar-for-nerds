@@ -561,7 +561,7 @@ app.get('/find', function(req, res) {
               if (measure.SequenceLocation) {
                 for (var i = 0; i < measure.SequenceLocation.length; i++) {
                   var referenceSequence = {
-                    '@context': 'https://raw.githubusercontent.com/tnavatar/clingen-data-model/master/source/main/resources/example-jsonld/ReferenceSequence.jsonld',
+                    '@context': 'https://raw.githubusercontent.com/clingen-data-model/clingen-data-model/master/source/main/resources/example-jsonld/ReferenceSequence.jsonld',
                     '@id': 'http://www.ncbi.nlm.nih.gov/nuccore/' + measure.SequenceLocation[i].Accession,
                     '@type': 'ReferenceSequence',
                     chromosome: measure.SequenceLocation[i].Chr,
@@ -569,7 +569,7 @@ app.get('/find', function(req, res) {
                     referenceSequenceType: 'chromosome',
                   };
                   var simpleAllele = {
-                    '@context': 'https://raw.githubusercontent.com/tnavatar/clingen-data-model/master/source/main/resources/example-jsonld/SimpleAllele.jsonld',
+                    '@context': 'https://raw.githubusercontent.com/clingen-data-model/clingen-data-model/master/source/main/resources/example-jsonld/SimpleAllele.jsonld',
                     '@id': id + '&ldmeta=simpleAllele' + (alleleIndex++),
                     '@type': 'SimpleAllele',
                     allele: undefined,
@@ -600,7 +600,7 @@ app.get('/find', function(req, res) {
                 }
               } else {
                 var simpleAllele = {
-                  '@context': 'https://raw.githubusercontent.com/tnavatar/clingen-data-model/master/source/main/resources/example-jsonld/SimpleAllele.jsonld',
+                  '@context': 'https://raw.githubusercontent.com/clingen-data-model/clingen-data-model/master/source/main/resources/example-jsonld/SimpleAllele.jsonld',
                   '@id': id + '&ldmeta=simpleAllele' + (alleleIndex++),
                   '@type': 'SimpleAllele',
                   canonicalAllele: undefined,
@@ -615,7 +615,7 @@ app.get('/find', function(req, res) {
               var canonicalAlleles = [];
               for (var i = 0; i < simpleAlleles.length; i++) {
                 canonicalAlleles.push({
-                  '@context': 'https://raw.githubusercontent.com/tnavatar/clingen-data-model/master/source/main/resources/example-jsonld/CanonicalAllele.jsonld',
+                  '@context': 'https://raw.githubusercontent.com/clingen-data-model/clingen-data-model/master/source/main/resources/example-jsonld/CanonicalAllele.jsonld',
                   '@id': undefined,
                   '@type': 'CanonicalAllele',
                   active: true,
@@ -647,7 +647,7 @@ app.get('/find', function(req, res) {
                   nestedIds.push(canonicalAlleles[i]['@id']);
                 }
                 ld.push({
-                  '@context': 'https://raw.githubusercontent.com/tnavatar/clingen-data-model/master/source/main/resources/example-jsonld/CanonicalAllele.jsonld',
+                  '@context': 'https://raw.githubusercontent.com/clingen-data-model/clingen-data-model/master/source/main/resources/example-jsonld/CanonicalAllele.jsonld',
                   '@id': id,
                   '@type': 'CanonicalAllele',
                   active: true,
