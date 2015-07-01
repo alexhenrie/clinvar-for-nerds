@@ -572,7 +572,7 @@ app.get('/find', function(req, res) {
                     '@context': 'https://raw.githubusercontent.com/tnavatar/clingen-data-model/master/source/main/resources/example-jsonld/SimpleAllele.jsonld',
                     '@id': id + '&ldmeta=simpleAllele' + (alleleIndex++),
                     '@type': 'SimpleAllele',
-                    allele: measure.SequenceLocation[i].alternateAllele.replace('-', '*'),
+                    allele: undefined,
                     canonicalAllele: undefined,
                     primaryNucleotideChangeType: changeTypeTable[measure.Type],
                     referenceCoordinate: {
@@ -583,6 +583,9 @@ app.get('/find', function(req, res) {
                     },
                     simpleAlleleType: 'nucleotide',
                   };
+                  if (measure.SequenceLocation[i].alternateAllele) {
+                    simpleAllele.allele = measure.SequenceLocation[i].alternateAllele.replace('-', '*');
+                  }
                   var newReferenceSequence = true;
                   for (var j = 0; j < referenceSequences.length; j++) {
                     if (referenceSequences[j]['@id'] == referenceSequence['@id']) {
