@@ -664,6 +664,7 @@ app.get('/find', function(req, res) {
               });
 
               ld.push({
+                '@context': 'https://raw.githubusercontent.com/clingen-data-model/clingen-data-model/master/source/main/resources/example-jsonld/Provenance.jsonld',
                 '@type': 'Provenance',
                 recorded: scv.ClinVarSubmissionID.submitterDate,
                 target: [id],
