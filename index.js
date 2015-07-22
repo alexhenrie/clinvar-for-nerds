@@ -100,12 +100,23 @@ app.get('/count', function(req, res) {
       res.status(400); //bad request
       return;
     }
+    var counts = {};
     db.collection('clinvarsets').count(q, function(err, count) {
       if (err) {
         res.status(400); //bad request
         return;
       }
-      res.send(String(count));
+      counts.recordsFromQuery = count;
+
+      db.collection('clinvarsets').count(q, {skip: Number(req.query.start) || 0, limit: RECORDS_PER_PAGE}, function(err, count) {
+        if (err) {
+          res.status(400); //bad request
+          return;
+        }
+        counts.recordsOnPage = count;
+
+        res.json(counts);
+      });
     });
   });
 });
@@ -128,7 +139,7 @@ app.get('/find', function(req, res) {
       {$match: q},
       {$limit: RECORDS_PER_PAGE}, //make sure the toArray function doesn't take forever or run out of memory
     ];
-    var cursor = db.collection('clinvarsets')
+    var cursor = db.collection('clinvarsets');
 
     switch (req.query.format)
     {

@@ -28,11 +28,6 @@ module.exports = React.createClass({
 
       results.addEventListener('load', function() {
         this.loading = false;
-        try {
-          this.resultCount = JSON.parse(results.contentDocument.body.textContent).length;
-        } catch (e) {
-          this.resultCount = 0;
-        }
         this.showStats();
         loading.style.display = 'none';
         stats.style.display = '';
@@ -107,8 +102,9 @@ module.exports = React.createClass({
     if (props.query.start)
       q += '&start=' + props.query.start;
 
-    request.get('/count?q=' + q, function(error, result) {
-      this.totalRecords = result.text;
+    request.get('/count?q=' + q, function(error, response) {
+      this.recordsOnPage = response.body.recordsOnPage;
+      this.recordsFromQuery = response.body.recordsFromQuery;
       this.showStats();
     }.bind(this));
     this.setState({url: '/find?q=' + q});
@@ -117,7 +113,7 @@ module.exports = React.createClass({
     this.props.transition(0);
   },
   goToLastPage: function() {
-    this.props.transition(Math.floor(this.totalRecords / RECORDS_PER_PAGE) * RECORDS_PER_PAGE);
+    this.props.transition(Math.floor(this.recordsFromQuery / RECORDS_PER_PAGE) * RECORDS_PER_PAGE);
   },
   goToNextPage: function() {
     this.props.transition(this.start + RECORDS_PER_PAGE)
@@ -161,14 +157,14 @@ module.exports = React.createClass({
       stats.textContent = '';
     } else {
       var start = Number(this.props.query.start) || 0;
-      if (this.resultCount)
-        stats.textContent = 'Showing records ' + (start + 1) + '-' + (start + this.resultCount) + ' of ' + this.totalRecords + '. ';
+      if (this.recordsOnPage)
+        stats.textContent = 'Showing records ' + (start + 1) + '-' + (start + this.recordsOnPage) + ' of ' + this.recordsFromQuery + '. ';
       else
         stats.textContent = '';
       stats.textContent += 'Search completed in ' + ((Date.now() - this.startTime) / 1000).toFixed(2) + ' seconds.';
 
       var enablePrev = (start > 0);
-      var enableNext = (start + this.resultCount < this.totalRecords);
+      var enableNext = (start + this.recordsOnPage < this.recordsFromQuery);
       if (enablePrev || enableNext) {
         this.refs.turner.getDOMNode().style.display = '';
       }
