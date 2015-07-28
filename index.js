@@ -640,6 +640,9 @@ app.get('/find', function(req, res) {
               if (canonicalAlleles.length == 1) {
                 canonicalAlleles[0]['@id'] = id;
                 canonicalAlleles[0].id = scv.ClinVarAccession.Acc;
+                canonicalAlleles[0].relatedSimpleAllele = simpleAlleles[0].map(function(simpleAllele) {
+                  return simpleAllele['@id'];
+                });
                 canonicalAlleles[0].version = scv.ClinVarAccession.Version;
                 for (var i = 0; i < simpleAlleles[0].length; i++) {
                   simpleAlleles[0][i].canonicalAllele = id;
