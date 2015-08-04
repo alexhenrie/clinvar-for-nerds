@@ -553,6 +553,7 @@ app.get('/find', function(req, res) {
 
           var ld = [];
           var referenceSequences = [];
+          var provenanceTargets = [];
 
           docs.forEach(function(doc) {
             var id = req.protocol + '://' + req.headers.host + '/find?q={"ID":' + doc.ID + '}';
@@ -673,20 +674,27 @@ app.get('/find', function(req, res) {
               });
             }
             ld.push.apply(ld, canonicalAlleles);
-
-            ld.push({
-              '@context': 'https://raw.githubusercontent.com/clingen-data-model/clingen-data-model/master/source/main/resources/example-jsonld/Provenance.jsonld',
-              '@type': 'Provenance',
-              recorded: rcv.DateLastUpdated,
-              target: [id],
-            });
+            provenanceTargets.push.apply(provenanceTargets, canonicalAlleles.map(function(allele) {
+              return allele['@id'];
+            }));
 
             simpleAlleles.forEach(function(simpleAlleles) {
               ld.push.apply(ld, simpleAlleles);
+              provenanceTargets.push.apply(provenanceTargets, simpleAlleles.map(function(allele) {
+                return allele['@id'];
+              }));
             });
           });
 
           ld.push.apply(ld, referenceSequences);
+
+          ld.push({
+            '@context': 'https://raw.githubusercontent.com/clingen-data-model/clingen-data-model/master/source/main/resources/example-jsonld/Provenance.jsonld',
+            '@type': 'Provenance',
+            entity: 'ClinVar for Nerds',
+            recorded: clinvarDates.imported,
+            target: provenanceTargets,
+          });
 
           res.json(ld);
         });

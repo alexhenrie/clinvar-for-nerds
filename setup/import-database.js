@@ -68,6 +68,11 @@ MongoClient.connect('mongodb://localhost:27017/clinvar_nerds', function(err, db)
       var fileStream = fs.createReadStream('ClinVarFullRelease_00-latest.xml');
       var xmlStream = new XmlStream(fileStream);
 
+      xmlStream.on('startElement: ReleaseSet', function(item) {
+        fs.writeFileSync('models/clinvar-dates.js',
+          'module.exports = ' + JSON.stringify({release: item.$.Dated, imported: (new Date()).toISOString()}, null, 2) + ';');
+      });
+
       Object.keys(clinvarCollects).forEach(function(tagName) {
         xmlStream.collect(tagName);
       });
