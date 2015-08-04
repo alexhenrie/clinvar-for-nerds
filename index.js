@@ -2,6 +2,7 @@
 
 var express = require('express');
 var app = express();
+var clinvarDates = require('./models/clinvar-dates.js');
 var ClinVarSet = require('./models/clinvarset.js');
 var csvStringify = require('csv-stringify');
 var MongoClient = require('mongodb').MongoClient;
@@ -557,7 +558,8 @@ app.get('/find', function(req, res) {
             var id = req.protocol + '://' + req.headers.host + '/find?q={"ID":' + doc.ID + '}';
             var simpleAlleles = []; //an array of arrays, grouped first by allele and second by reference sequence
             var alleleIndex = 0;
-            doc.ReferenceClinVarAssertion.MeasureSet.Measure.forEach(function(measure) {
+            var rcv = doc.ReferenceClinVarAssertion;
+            rcv.MeasureSet.Measure.forEach(function(measure) {
               simpleAlleles.push([]);
               var changeTypeTable = {
                 'Insertion':                 'insertion',
@@ -622,67 +624,65 @@ app.get('/find', function(req, res) {
               }
             });
 
-            doc.ClinVarAssertion.forEach(function(scv) {
-              var canonicalAlleles = [];
-              for (var i = 0; i < simpleAlleles.length; i++) {
-                canonicalAlleles.push({
-                  '@context': 'https://raw.githubusercontent.com/clingen-data-model/clingen-data-model/master/source/main/resources/example-jsonld/CanonicalAllele.jsonld',
-                  '@id': undefined,
-                  '@type': 'CanonicalAllele',
-                  active: true,
-                  complexity: 'simple',
-                  id: undefined,
-                  identifier: simpleAlleles[i].identifier,
-                  version: undefined,
-                });
-              }
+            var canonicalAlleles = [];
+            for (var i = 0; i < simpleAlleles.length; i++) {
+              canonicalAlleles.push({
+                '@context': 'https://raw.githubusercontent.com/clingen-data-model/clingen-data-model/master/source/main/resources/example-jsonld/CanonicalAllele.jsonld',
+                '@id': undefined,
+                '@type': 'CanonicalAllele',
+                active: true,
+                complexity: 'simple',
+                id: undefined,
+                identifier: simpleAlleles[i].identifier,
+                version: undefined,
+              });
+            }
 
-              if (canonicalAlleles.length == 1) {
-                canonicalAlleles[0]['@id'] = id;
-                canonicalAlleles[0].id = scv.ClinVarAccession.Acc;
-                canonicalAlleles[0].relatedSimpleAllele = simpleAlleles[0].map(function(simpleAllele) {
+            if (canonicalAlleles.length == 1) {
+              canonicalAlleles[0]['@id'] = id;
+              canonicalAlleles[0].id = rcv.ClinVarAccession.Acc;
+              canonicalAlleles[0].relatedSimpleAllele = simpleAlleles[0].map(function(simpleAllele) {
+                return simpleAllele['@id'];
+              });
+              canonicalAlleles[0].version = rcv.ClinVarAccession.Version;
+              for (var i = 0; i < simpleAlleles[0].length; i++) {
+                simpleAlleles[0][i].canonicalAllele = id;
+              }
+            } else {
+              var nestedIds = [];
+              for (var i = 0; i < canonicalAlleles.length; i++) {
+                canonicalAlleles[i]['@id'] = id + '&ldmeta=canonicalAllele' + i;
+                canonicalAlleles[i].composite = id;
+                canonicalAlleles[i].relatedSimpleAllele = simpleAlleles[i].map(function(simpleAllele) {
                   return simpleAllele['@id'];
                 });
-                canonicalAlleles[0].version = scv.ClinVarAccession.Version;
-                for (var i = 0; i < simpleAlleles[0].length; i++) {
-                  simpleAlleles[0][i].canonicalAllele = id;
+                for (var j = 0; j < simpleAlleles[i].length; j++) {
+                  simpleAlleles[i][j].canonicalAllele = canonicalAlleles[i]['@id'];
                 }
-              } else {
-                var nestedIds = [];
-                for (var i = 0; i < canonicalAlleles.length; i++) {
-                  canonicalAlleles[i]['@id'] = id + '&ldmeta=canonicalAllele' + i;
-                  canonicalAlleles[i].composite = id;
-                  canonicalAlleles[i].relatedSimpleAllele = simpleAlleles[i].map(function(simpleAllele) {
-                    return simpleAllele['@id'];
-                  });
-                  for (var j = 0; j < simpleAlleles[i].length; j++) {
-                    simpleAlleles[i][j].canonicalAllele = canonicalAlleles[i]['@id'];
-                  }
-                  nestedIds.push(canonicalAlleles[i]['@id']);
-                }
-                ld.push({
-                  '@context': 'https://raw.githubusercontent.com/clingen-data-model/clingen-data-model/master/source/main/resources/example-jsonld/CanonicalAllele.jsonld',
-                  '@id': id,
-                  '@type': 'CanonicalAllele',
-                  active: true,
-                  complexity: 'complex',
-                  id: scv.ClinVarAccession.Acc,
-                  nested: nestedIds,
-                  version: scv.ClinVarAccession.Version,
-                });
+                nestedIds.push(canonicalAlleles[i]['@id']);
               }
-              ld.push.apply(ld, canonicalAlleles);
-
-              simpleAlleles.forEach(function(simpleAlleles) {
-                ld.push.apply(ld, simpleAlleles);
-              });
-
               ld.push({
-                '@context': 'https://raw.githubusercontent.com/clingen-data-model/clingen-data-model/master/source/main/resources/example-jsonld/Provenance.jsonld',
-                '@type': 'Provenance',
-                recorded: scv.ClinVarSubmissionID.submitterDate,
-                target: [id],
+                '@context': 'https://raw.githubusercontent.com/clingen-data-model/clingen-data-model/master/source/main/resources/example-jsonld/CanonicalAllele.jsonld',
+                '@id': id,
+                '@type': 'CanonicalAllele',
+                active: true,
+                complexity: 'complex',
+                id: rcv.ClinVarAccession.Acc,
+                nested: nestedIds,
+                version: rcv.ClinVarAccession.Version,
               });
+            }
+            ld.push.apply(ld, canonicalAlleles);
+
+            ld.push({
+              '@context': 'https://raw.githubusercontent.com/clingen-data-model/clingen-data-model/master/source/main/resources/example-jsonld/Provenance.jsonld',
+              '@type': 'Provenance',
+              recorded: rcv.DateLastUpdated,
+              target: [id],
+            });
+
+            simpleAlleles.forEach(function(simpleAlleles) {
+              ld.push.apply(ld, simpleAlleles);
             });
           });
 
