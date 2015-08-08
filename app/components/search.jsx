@@ -56,7 +56,7 @@ module.exports = React.createClass({
     var caseSensitive = props.query.caseSensitive;
     var q;
     try {
-      q = JSON.parse(props.params.q);
+      q = JSON.parse(decodeURIComponent(props.params.q));
     } catch (e) {
       this.setState({url: 'data:text/plain,Syntax error in query.'});
       return;

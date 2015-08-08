@@ -18,7 +18,7 @@ module.exports = React.createClass({
   render: function() {
     //deserialize the query
     var restrictions;
-    var q = this.props.params.q;
+    var q = decodeURIComponent(this.props.params.q);
     if (q && Object.keys(q).length) {
       try {
         q = JSON.parse(q);
@@ -116,7 +116,7 @@ module.exports = React.createClass({
     q += '}';
 
     //change the URL fragment
-    this.context.router.transitionTo('search', {q: q}, {
+    this.context.router.transitionTo('search', {q: encodeURIComponent(q)}, {
       caseSensitive: this.refs.caseSensitive.getDOMNode().checked ? 1 : undefined,
       format:
         this.refs.formatCsv.getDOMNode().checked ? 'csv' :
