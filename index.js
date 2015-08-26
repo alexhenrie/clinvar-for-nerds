@@ -604,7 +604,7 @@ app.get('/find', function(req, res) {
                 'copy number gain':          'copy_number_variation',
                 'copy number loss':          'copy_number_variation',
               };
-              if (measure.SequenceLocation) {
+              if (measure.SequenceLocation.length) {
                 for (var i = 0; i < measure.SequenceLocation.length; i++) {
                   var referenceSequenceId = req.protocol + '://' + req.headers.host + '/find?q={"ReferenceClinVarAssertion.MeasureSet.Measure.SequenceLocation.Accession":"' + measure.SequenceLocation[i].Accession + '"}';
                   if (!jsonLdHas(referenceSequences, referenceSequenceId)) {
