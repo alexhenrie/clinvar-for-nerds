@@ -578,7 +578,7 @@ app.get('/find', function(req, res) {
           docs.forEach(function(doc) {
             var id = req.protocol + '://' + req.headers.host + '/find?q={"ID":' + doc.ID + '}';
             var canonicalAlleles = [];
-            var simpleAlleles = []; //an array of arrays, each set corresponds to one canonical allele
+            var alleleInstances = []; //an array of arrays, each set corresponds to one canonical allele
             var alleleIndex = 0;
             var rcv = doc.ReferenceClinVarAssertion;
             rcv.MeasureSet.Measure.forEach(function(measure) {
@@ -590,10 +590,10 @@ app.get('/find', function(req, res) {
                 complexity: 'simple',
                 id: measure.ID,
                 identifier: rcv.ClinVarAccession.Acc,
-                relatedSimpleAllele: undefined,
+                relatedAlleleInstance: undefined,
                 version: rcv.ClinVarAccession.Version,
               });
-              simpleAlleles.push([]);
+              alleleInstances.push([]);
               var changeTypeTable = {
                 'Insertion':                 'insertion',
                 'Deletion':                  'deletion',
@@ -617,10 +617,10 @@ app.get('/find', function(req, res) {
                       referenceSequenceType: 'chromosome',
                     });
                   }
-                  simpleAlleles[simpleAlleles.length - 1].push({
-                    '@context': 'https://raw.githubusercontent.com/clingen-data-model/clingen-data-model/master/source/main/resources/example-jsonld/SimpleAllele.jsonld',
-                    '@id': id + '&ldmeta=simpleAllele' + (alleleIndex++),
-                    '@type': 'SimpleAllele',
+                  alleleInstances[alleleInstances.length - 1].push({
+                    '@context': 'https://raw.githubusercontent.com/clingen-data-model/clingen-data-model/master/source/main/resources/example-jsonld/AlleleInstance.jsonld',
+                    '@id': id + '&ldmeta=alleleInstance' + (alleleIndex++),
+                    '@type': 'AlleleInstance',
                     allele: measure.SequenceLocation[i].alternateAllele ? measure.SequenceLocation[i].alternateAllele.replace('-', '*') : undefined,
                     canonicalAllele: undefined,
                     primaryNucleotideChangeType: changeTypeTable[measure.Type],
@@ -630,7 +630,7 @@ app.get('/find', function(req, res) {
                       ref: measure.SequenceLocation[i].referenceAllele,
                       referenceSequence: referenceSequenceId,
                     },
-                    simpleAlleleType: 'nucleotide',
+                    alleleInstanceType: 'nucleotide',
                   });
                 }
 
@@ -683,10 +683,10 @@ app.get('/find', function(req, res) {
                       });
                     }
 
-                    simpleAlleles[simpleAlleles.length - 1].push({
-                      '@context': 'https://raw.githubusercontent.com/clingen-data-model/clingen-data-model/master/source/main/resources/example-jsonld/SimpleAllele.jsonld',
-                      '@id': id + '&ldmeta=simpleAllele' + (alleleIndex++),
-                      '@type': 'SimpleAllele',
+                    alleleInstances[alleleInstances.length - 1].push({
+                      '@context': 'https://raw.githubusercontent.com/clingen-data-model/clingen-data-model/master/source/main/resources/example-jsonld/AlleleInstance.jsonld',
+                      '@id': id + '&ldmeta=alleleInstance' + (alleleIndex++),
+                      '@type': 'AlleleInstance',
                       alleleName: [
                         {
                           name: attribute.text,
@@ -698,35 +698,35 @@ app.get('/find', function(req, res) {
                       referenceCoordinate: {
                         referenceSequence: referenceSequenceId,
                       },
-                      simpleAlleleType: 'nucleotide',
+                      alleleInstanceType: 'nucleotide',
                     });
                   }); //attribute
                 } //attribute set
               } else { //no sequence location
-                simpleAlleles[simpleAlleles.length - 1].push({
-                  '@context': 'https://raw.githubusercontent.com/clingen-data-model/clingen-data-model/master/source/main/resources/example-jsonld/SimpleAllele.jsonld',
-                  '@id': id + '&ldmeta=simpleAllele' + (alleleIndex++),
-                  '@type': 'SimpleAllele',
+                alleleInstances[alleleInstances.length - 1].push({
+                  '@context': 'https://raw.githubusercontent.com/clingen-data-model/clingen-data-model/master/source/main/resources/example-jsonld/AlleleInstance.jsonld',
+                  '@id': id + '&ldmeta=alleleInstance' + (alleleIndex++),
+                  '@type': 'AlleleInstance',
                   canonicalAllele: undefined,
                   primaryNucleotideChangeType: changeTypeTable[measure.Type],
-                  simpleAlleleType: 'nucleotide',
+                  alleleInstanceType: 'nucleotide',
                 });
               }
             }); //measure
 
             if (canonicalAlleles.length == 1) {
               canonicalAlleles[0]['@id'] = id;
-              canonicalAlleles[0].relatedSimpleAllele = jsonLdIds(simpleAlleles[0]);
-              for (var i = 0; i < simpleAlleles[0].length; i++) {
-                simpleAlleles[0][i].canonicalAllele = id;
+              canonicalAlleles[0].relatedAlleleInstance = jsonLdIds(alleleInstances[0]);
+              for (var i = 0; i < alleleInstances[0].length; i++) {
+                alleleInstances[0][i].canonicalAllele = id;
               }
             } else {
               for (var i = 0; i < canonicalAlleles.length; i++) {
                 canonicalAlleles[i]['@id'] = id + '&ldmeta=canonicalAllele' + i;
                 canonicalAlleles[i].composite = id;
-                canonicalAlleles[i].relatedSimpleAllele = jsonLdIds(simpleAlleles[i]);
-                for (var j = 0; j < simpleAlleles[i].length; j++) {
-                  simpleAlleles[i][j].canonicalAllele = canonicalAlleles[i]['@id'];
+                canonicalAlleles[i].relatedAlleleInstance = jsonLdIds(alleleInstances[i]);
+                for (var j = 0; j < alleleInstances[i].length; j++) {
+                  alleleInstances[i][j].canonicalAllele = canonicalAlleles[i]['@id'];
                 }
               }
               ld.push({
@@ -744,9 +744,9 @@ app.get('/find', function(req, res) {
             ld.push.apply(ld, canonicalAlleles);
             provenanceTargets.push.apply(provenanceTargets, jsonLdIds(canonicalAlleles));
 
-            simpleAlleles.forEach(function(simpleAlleles) {
-              ld.push.apply(ld, simpleAlleles);
-              provenanceTargets.push.apply(provenanceTargets, jsonLdIds(simpleAlleles));
+            alleleInstances.forEach(function(alleleInstances) {
+              ld.push.apply(ld, alleleInstances);
+              provenanceTargets.push.apply(provenanceTargets, jsonLdIds(alleleInstances));
             });
           }); //doc
 
