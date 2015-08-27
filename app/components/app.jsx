@@ -18,10 +18,10 @@ module.exports = React.createClass({
   render: function() {
     //deserialize the query
     var restrictions;
-    var q = decodeURIComponent(this.props.params.q);
-    if (q && Object.keys(q).length) {
+    var q = this.props.params.q;
+    if (q) {
       try {
-        q = JSON.parse(q);
+        q = JSON.parse(decodeURIComponent(q));
       } catch (e) {
         q = {};
         console.log('Syntax error in query.');
