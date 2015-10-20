@@ -50,9 +50,9 @@ module.exports = React.createClass({
           };
         }
       });
-    } else {
-      restrictions = [{property: '', operator: 'eq', operand: ''}];
     }
+    if (!restrictions)
+      restrictions = [{property: '', operator: 'eq', operand: ''}];
     //render input components corresponding to the query
     return (
       <div className="tall">
