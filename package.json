@@ -25,6 +25,7 @@
     "mongodb": "^2.0.46",
     "mongoose": "^4.1.11",
     "react": "^0.14.0",
+    "react-dom": "^0.14.0",
     "react-router": "^1.0.0-rc3",
     "superagent": "^1.4.0",
     "xml-stream": "^0.4.5",

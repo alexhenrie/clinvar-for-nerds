@@ -1,8 +1,7 @@
 var InputGroup = require('./input-group.jsx');
 var React = require('react');
-var Router = require('react-router');
-
-var RouteHandler = Router.RouteHandler;
+var Router = require('react-router').Router;
+var History = require('react-router').History;
 
 var clinvarSchemaFlat = require ('../../models/clinvar-schema-flat');
 
@@ -12,9 +11,9 @@ module.exports = React.createClass({
   addRestriction : function() {
     this.refs.inputGroup.addRestriction();
   },
-  contextTypes: {
-    router: React.PropTypes.func
-  },
+  mixins: [
+    History
+  ],
   render: function() {
     //deserialize the query
     var restrictions;
@@ -61,25 +60,22 @@ module.exports = React.createClass({
           <InputGroup ref="inputGroup" restrictions={restrictions}/>
           <div className="space-kids">
             <button onClick={this.addRestriction} type="button">Add restriction</button>
-            <label><input defaultChecked={this.props.query.caseSensitive} ref="caseSensitive" type="checkbox"/> Case sensitive</label>
-            <label><input defaultChecked={this.props.query.strip || 1} ref="omitEmpty" type="checkbox"/> Omit empty fields</label>
-            <label><input defaultChecked={this.props.query.format == 'csv'} name="format" ref="formatCsv" type="radio" value="csv"/> CSV</label>
-            <label><input defaultChecked={!this.props.query.format || this.props.query.format == 'json'} name="format" ref="formatJson" type="radio" value="json"/> JSON</label>
-            <label><input defaultChecked={this.props.query.format == 'vcf'} name="format" ref="formatVcf" type="radio" value="vcf"/> VCF</label>
-            <label><input defaultChecked={this.props.query.format == 'json-ld'} name="format" ref="formatJsonLd" type="radio" value="json-ld"/> JSON-LD</label>
+            <label><input defaultChecked={this.props.location.query.caseSensitive} ref="caseSensitive" type="checkbox"/> Case sensitive</label>
+            <label><input defaultChecked={this.props.location.query.strip || 1} ref="omitEmpty" type="checkbox"/> Omit empty fields</label>
+            <label><input defaultChecked={this.props.location.query.format == 'csv'} name="format" ref="formatCsv" type="radio" value="csv"/> CSV</label>
+            <label><input defaultChecked={!this.props.location.query.format || this.props.location.query.format == 'json'} name="format" ref="formatJson" type="radio" value="json"/> JSON</label>
+            <label><input defaultChecked={this.props.location.query.format == 'vcf'} name="format" ref="formatVcf" type="radio" value="vcf"/> VCF</label>
+            <label><input defaultChecked={this.props.location.query.format == 'json-ld'} name="format" ref="formatJsonLd" type="radio" value="json-ld"/> JSON-LD</label>
             <button className="btn btn-primary" type="submit">Search</button>
           </div>
         </form>
-        <RouteHandler
-          {...this.props}
-          transition={this.transition}
-        />
+        {this.props.children}
       </div>
     );
   },
   search: function(e) {
     //execute the search
-    this.transition(this.props.query.start);
+    this.transition(this.props.location.query.start);
 
     //don't actually submit the form
     e.preventDefault();
@@ -116,14 +112,14 @@ module.exports = React.createClass({
     q += '}';
 
     //change the URL fragment
-    this.context.router.transitionTo('search', {q: encodeURIComponent(q)}, {
-      caseSensitive: this.refs.caseSensitive.getDOMNode().checked ? 1 : undefined,
+    this.history.pushState(null, '/search/' + encodeURIComponent(q), {
+      caseSensitive: this.refs.caseSensitive.checked ? 1 : undefined,
       format:
-        this.refs.formatCsv.getDOMNode().checked ? 'csv' :
-        this.refs.formatVcf.getDOMNode().checked ? 'vcf' :
-        this.refs.formatJsonLd.getDOMNode().checked ? 'json-ld' :
+        this.refs.formatCsv.checked ? 'csv' :
+        this.refs.formatVcf.checked ? 'vcf' :
+        this.refs.formatJsonLd.checked ? 'json-ld' :
         'json',
-      strip: this.refs.omitEmpty.getDOMNode().checked ? 1 : undefined,
+      strip: this.refs.omitEmpty.checked ? 1 : undefined,
       start: start,
     });
     this.forceUpdate(); //rerun the search even if the parameters have not changed

@@ -780,8 +780,8 @@ app.get('/find', function(req, res) {
   });
 });
 
-app.use(express.static(__dirname + '/assets'));
 app.use('/dist', express.static(__dirname + '/dist'));
+app.use('*', express.static(__dirname + '/assets'));
 
 var server = app.listen(3000, function() {
   console.log('Listening on port %d', server.address().port);

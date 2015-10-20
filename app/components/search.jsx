@@ -14,13 +14,13 @@ module.exports = React.createClass({
     this.getResults(this.props);
   },
   componentDidUpdate: function() {
-    var turner = this.refs.turner.getDOMNode();
+    var turner = this.refs.turner;
     turner.style.display = 'none';
 
     if (this.refs.results) {
-      var loading = this.refs.loading.getDOMNode();
-      var stats = this.refs.stats.getDOMNode();
-      var results = this.refs.results.getDOMNode();
+      var loading = this.refs.loading;
+      var stats = this.refs.stats;
+      var results = this.refs.results;
 
       loading.style.display = '';
       stats.style.display = 'none';
@@ -46,14 +46,14 @@ module.exports = React.createClass({
   },
   getResults: function(props) {
     //save this value for navigation later
-    this.start = Number(props.query.start) || 0;
+    this.start = Number(props.location.query.start) || 0;
 
     //start the benchmark
     this.startTime = Date.now();
 
     //our UI supports some operators that our API does not, because our API
     //ingests literal MongoDB queries
-    var caseSensitive = props.query.caseSensitive;
+    var caseSensitive = props.location.query.caseSensitive;
     var q;
     try {
       q = JSON.parse(decodeURIComponent(props.params.q));
@@ -96,11 +96,11 @@ module.exports = React.createClass({
       }
     }
 
-    var q = JSON.stringify(q) + '&format=' + props.query.format;
-    if (props.query.strip)
+    var q = JSON.stringify(q) + '&format=' + props.location.query.format;
+    if (props.location.query.strip)
       q += '&strip=1';
-    if (props.query.start)
-      q += '&start=' + props.query.start;
+    if (props.location.query.start)
+      q += '&start=' + props.location.query.start;
 
     request.get('/count?q=' + q, function(error, response) {
       this.recordsOnPage = response.body.recordsOnPage;
@@ -134,16 +134,18 @@ module.exports = React.createClass({
           <div ref="stats" style={{display:'none', textAlign:'right'}}></div>
           <iframe ref="results" style={{backgroundColor:'#F5F5F5', border:'1px solid #CCC', display:'none', flexGrow:'1'}}></iframe>
           <table ref="turner" style={{width:'100%'}}>
-            <tr>
-              <td>
-                <button onClick={this.goToFirstPage} ref="first">&lt;&lt; First page</button>
-                <button onClick={this.goToPreviousPage} ref="prev">&lt; Previous {RECORDS_PER_PAGE}</button>
-              </td>
-              <td style={{textAlign:'right'}}>
-                <button onClick={this.goToNextPage} ref="next">Next {RECORDS_PER_PAGE} &gt;</button>
-                <button onClick={this.goToLastPage} ref="last">Last page &gt;&gt;</button>
-              </td>
-            </tr>
+            <tbody>
+              <tr>
+                <td>
+                  <button onClick={this.goToFirstPage} ref="first">&lt;&lt; First page</button>
+                  <button onClick={this.goToPreviousPage} ref="prev">&lt; Previous {RECORDS_PER_PAGE}</button>
+                </td>
+                <td style={{textAlign:'right'}}>
+                  <button onClick={this.goToNextPage} ref="next">Next {RECORDS_PER_PAGE} &gt;</button>
+                  <button onClick={this.goToLastPage} ref="last">Last page &gt;&gt;</button>
+                </td>
+              </tr>
+            </tbody>
           </table>
         </div>
       );
@@ -152,11 +154,11 @@ module.exports = React.createClass({
     }
   },
   showStats: function() {
-    var stats = this.refs.stats.getDOMNode();
+    var stats = this.refs.stats;
     if (this.loading) {
       stats.textContent = '';
     } else {
-      var start = Number(this.props.query.start) || 0;
+      var start = Number(this.props.location.query.start) || 0;
       if (this.recordsOnPage)
         stats.textContent = 'Showing records ' + (start + 1) + '-' + (start + this.recordsOnPage) + ' of ' + this.recordsFromQuery + '. ';
       else
@@ -166,21 +168,21 @@ module.exports = React.createClass({
       var enablePrev = (start > 0);
       var enableNext = (start + this.recordsOnPage < this.recordsFromQuery);
       if (enablePrev || enableNext) {
-        this.refs.turner.getDOMNode().style.display = '';
+        this.refs.turner.style.display = '';
       }
       if (enablePrev) {
-        this.refs.first.getDOMNode().style.display = '';
-        this.refs.prev.getDOMNode().style.display = '';
+        this.refs.first.style.display = '';
+        this.refs.prev.style.display = '';
       } else {
-        this.refs.first.getDOMNode().style.display = 'none';
-        this.refs.prev.getDOMNode().style.display = 'none';
+        this.refs.first.style.display = 'none';
+        this.refs.prev.style.display = 'none';
       }
       if (enableNext) {
-        this.refs.next.getDOMNode().style.display = '';
-        this.refs.last.getDOMNode().style.display = '';
+        this.refs.next.style.display = '';
+        this.refs.last.style.display = '';
       } else {
-        this.refs.next.getDOMNode().style.display = 'none';
-        this.refs.last.getDOMNode().style.display = 'none';
+        this.refs.next.style.display = 'none';
+        this.refs.last.style.display = 'none';
       }
     }
   },

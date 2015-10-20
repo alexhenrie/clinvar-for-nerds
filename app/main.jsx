@@ -1,20 +1,25 @@
 var React = require('react');
-var Router = require('react-router');
+var ReactDOM = require('react-dom');
+var Route = require('react-router').Route;
+var Router = require('react-router').Router;
+var createBrowserHistory = require('history/lib/createBrowserHistory');
 
 var App = require('./components/app.jsx');
 var Search = require('./components/search.jsx');
 
-var Route = Router.Route;
+//createBrowserHistory is the magic that makes the URL change without sending an
+//HTTP request or changing the fragment identifier
 
-var routes = (
-  //The main query, named q to avoid confusion, is saved in state.params so
-  //that colons don't have to be escaped in the URL. The other parameters are
-  //saved in state.query.
-  <Route handler={App} path="/">
-    <Route name="search" path="search/:q" handler={Search}/>
-  </Route>
+//The main query, named q to try to avoid confusion, is saved in state.params so
+//that colons don't have to be escaped in the URL. The other parameters are
+//saved in state.query.
+
+var router = (
+  <Router history={createBrowserHistory()}>
+    <Route component={App} path="/">
+      <Route component={Search} path="search/:q"/>
+    </Route>
+  </Router>
 );
 
-Router.run(routes, function(Handler, state) {
-  React.render(<Handler {...state}/>, document.getElementById('application'));
-});
+ReactDOM.render(router, document.getElementById('application'));
