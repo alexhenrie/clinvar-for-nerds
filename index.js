@@ -575,8 +575,10 @@ app.get('/find', function(req, res) {
           var referenceSequences = [];
           var provenanceTargets = [];
 
+          var baseId = req.protocol + '://' + (req.get('X-Forwarded-Host') || req.get('Host')) + '/find?q=';
+
           docs.forEach(function(doc) {
-            var id = req.protocol + '://' + req.headers.host + '/find?q={"ID":' + doc.ID + '}';
+            var id = baseId + '{"ID":' + doc.ID + '}';
             var canonicalAlleles = [];
             var alleleInstances = []; //an array of arrays, each set corresponds to one canonical allele
             var alleleIndex = 0;
@@ -606,7 +608,7 @@ app.get('/find', function(req, res) {
               };
               if (measure.SequenceLocation.length) {
                 for (var i = 0; i < measure.SequenceLocation.length; i++) {
-                  var referenceSequenceId = req.protocol + '://' + req.headers.host + '/find?q={"ReferenceClinVarAssertion.MeasureSet.Measure.SequenceLocation.Accession":"' + measure.SequenceLocation[i].Accession + '"}';
+                  var referenceSequenceId = baseId + '{"ReferenceClinVarAssertion.MeasureSet.Measure.SequenceLocation.Accession":"' + measure.SequenceLocation[i].Accession + '"}';
                   if (!jsonLdHas(referenceSequences, referenceSequenceId)) {
                     referenceSequences.push({
                       '@context': 'https://raw.githubusercontent.com/clingen-data-model/clingen-data-model/master/source/main/resources/example-jsonld/ReferenceSequence.jsonld',
@@ -671,7 +673,7 @@ app.get('/find', function(req, res) {
                         break;
                     }
 
-                    var referenceSequenceId = req.protocol + '://' + req.headers.host + '/find?q={"ReferenceClinVarAssertion.MeasureSet.Measure.SequenceLocation.Accession":"' + identifier + '"}';
+                    var referenceSequenceId = baseId + '{"ReferenceClinVarAssertion.MeasureSet.Measure.SequenceLocation.Accession":"' + identifier + '"}';
                     if (!jsonLdHas(referenceSequences, referenceSequenceId)) {
                       referenceSequences.push({
                         '@context': 'https://raw.githubusercontent.com/clingen-data-model/clingen-data-model/master/source/main/resources/example-jsonld/ReferenceSequence.jsonld',
