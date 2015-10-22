@@ -20,6 +20,7 @@
     "async": "^1.4.2",
     "csv-stringify": "0.0.8",
     "express": "^4.13.3",
+    "history": "^1.12.5",
     "jsx-loader": "^0.13.2",
     "lodash": "^3.10.1",
     "mongodb": "^2.0.46",
