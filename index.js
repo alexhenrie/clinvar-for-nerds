@@ -782,8 +782,10 @@ app.get('/find', function(req, res) {
   });
 });
 
-app.use('/dist', express.static(__dirname + '/dist'));
-app.use('*', express.static(__dirname + '/assets'));
+//https://github.com/rackt/react-router/blob/master/docs/guides/basics/Histories.md#configuring-your-server
+app.use('/', express.static(__dirname + '/dist'));
+app.use('/', express.static(__dirname + '/assets'));
+app.use('*', express.static(__dirname + '/assets/index.html'));
 
 var server = app.listen(3000, function() {
   console.log('Listening on port %d', server.address().port);
