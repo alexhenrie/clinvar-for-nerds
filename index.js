@@ -439,11 +439,14 @@ app.get('/find', function(req, res) {
                 for (var i = 0; i < measure.SequenceLocation.length; i++) {
                   if (measure.SequenceLocation[i].Assembly == 'GRCh38') {
                     if (chr == '.') {
-                      chr = measure.SequenceLocation[i].Chr;
-                      pos = measure.SequenceLocation[i].start;
-                      ref = measure.SequenceLocation[i].referenceAllele;
-                      alt = measure.SequenceLocation[i].alternateAllele.replace('-', '*');
-                      if (alt == ref) alt = '.';
+                      if (measure.SequenceLocation[i].Chr)
+                        chr = measure.SequenceLocation[i].Chr;
+                      if (measure.SequenceLocation[i].start)
+                        pos = measure.SequenceLocation[i].start;
+                      if (measure.SequenceLocation[i].referenceAllele)
+                        ref = measure.SequenceLocation[i].referenceAllele;
+                      if (measure.SequenceLocation[i].alternateAllele && measure.SequenceLocation[i].alternateAllele != ref)
+                        alt = measure.SequenceLocation[i].alternateAllele.replace('-', '*');
                       clnhgvs = measure.SequenceLocation[i].Accession;
                     } else {
                       if (chr != measure.SequenceLocation[i].Chr) {
