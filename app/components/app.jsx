@@ -51,7 +51,7 @@ module.exports = React.createClass({
         }
       });
     }
-    if (!restrictions)
+    if (!restrictions || !restrictions.length)
       restrictions = [{property: '', operator: 'eq', operand: ''}];
     //render input components corresponding to the query
     return (
