@@ -69,7 +69,7 @@ module.exports = React.createClass({
             <button className="btn btn-primary" type="submit">Search</button>
           </div>
         </form>
-        {this.props.children}
+        {this.props.children ? React.cloneElement(this.props.children, {transtion: this.transition}) : undefined}
       </div>
     );
   },
