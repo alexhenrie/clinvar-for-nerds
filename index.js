@@ -653,11 +653,13 @@ app.get('/find', function(req, res) {
                     var identifier = hgvsPieces[1];
                     var refereceSequenceType;
                     var nameType;
+                    var contextualAlleleType;
 
                     switch (hgvsPieces[2]) {
                       case 'c':
                         referenceSequenceType = 'gene';
                         nameType = 'hgvs-genomic';
+                        contextualAlleleType = 'genomic';
                         break;
                       case 'g':
                         if (typePieces[2] == 'top level')
@@ -665,14 +667,17 @@ app.get('/find', function(req, res) {
                         else
                           referenceSequencetype = 'gene';
                         nameType = 'hgvs-genomic';
+                        contextualAlleleType = 'genomic';
                         break;
                       case 'r':
                         referenceSequencetype = 'transcript';
                         nameType = 'hgvs-rna';
+                        contextualAlleleType = 'transcript';
                         break;
                       case 'p':
                         referenceSequenceType = 'amino_acid';
                         nameType = 'hgvs-protein-1';
+                        contextualAlleleType = 'amino_acid';
                         break;
                     }
 
@@ -699,7 +704,7 @@ app.get('/find', function(req, res) {
                         },
                       ],
                       canonicalAllele: undefined,
-                      contextualAlleleType: 'nucleotide',
+                      contextualAlleleType: contextualAlleleType,
                       primaryNucleotideChangeType: referenceSequenceType != 'amino_acid' ? changeTypeTable[measure.Type] : undefined,
                       referenceCoordinate: {
                         referenceSequence: referenceSequenceId,
