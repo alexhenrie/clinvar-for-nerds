@@ -12,6 +12,7 @@ var select = xpath.useNamespaces({'xs': 'http://www.w3.org/2001/XMLSchema'});
 function xsdTypeToJsType(xsdType) {
   switch (xsdType) {
     case 'xs:string':
+    case 'xs:date':
     case 'xs:anyURI':
       return String;
     case 'xs:int':
@@ -19,8 +20,6 @@ function xsdTypeToJsType(xsdType) {
     case 'xs:nonNegativeInteger':
     case 'xs:positiveInteger':
       return Number;
-    case 'xs:date':
-      return Date;
     default:
       return null;
   }
