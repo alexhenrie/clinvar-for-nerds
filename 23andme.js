@@ -61,10 +61,12 @@ MongoClient.connect('mongodb://localhost:27017/clinvar_nerds', function(err, db)
           var referenceAllele = measure.SequenceLocation[0].referenceAllele;
           var alternateAllele = measure.SequenceLocation[0].alternateAllele;
           var geneSymbol = '';
-          for (var i = 0; i < measure.MeasureRelationship[0].Symbol.length; i++) {
-            if (measure.MeasureRelationship[0].Symbol[i].ElementValue.Type == 'Preferred') {
-              geneSymbol = measure.MeasureRelationship[0].Symbol[i].ElementValue.text;
-              break;
+          if (measure.MeasureRelationship.length) {
+            for (var i = 0; i < measure.MeasureRelationship[0].Symbol.length; i++) {
+              if (measure.MeasureRelationship[0].Symbol[i].ElementValue.Type == 'Preferred') {
+                geneSymbol = measure.MeasureRelationship[0].Symbol[i].ElementValue.text;
+                break;
+              }
             }
           }
           process.stderr.cursorTo(0); //overwrite status line
