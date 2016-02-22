@@ -5,7 +5,7 @@ in JSON or CSV format.
 ## Getting started
 1. ./setup.sh
 2. sudo npm install -g webpack
-3. webpack (add  -wd for development)
+3. webpack (add -wd for development)
 4. node index.js (or node-dev index.js)
 
 ## License
