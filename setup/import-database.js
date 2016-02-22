@@ -30,26 +30,28 @@ function shouldBeObject(item) {
  */
 function moveAttributes(item) {
   Object.keys(item).forEach(function(key1) {
-    if (Array.isArray(item))
-      nameStack.push('0');
-    else
-      nameStack.push(key1);
-
     if (key1 == '$') {
       Object.keys(item.$).forEach(function(key2) {
         item[key2] = item.$[key2];
       });
       delete item.$;
     } else if (key1.charAt(0) == '$') {
-      item[key1.substr(1)] = item[key1];
+      item[key1.substring(1)] = item[key1];
       delete item[key1];
-    } else if (item[key1] instanceof Object) {
-      moveAttributes(item[key1]);
-    } else if (shouldBeObject(item[key1])) {
-      item[key1] = {text: item[key1]};
-    }
+    } else {
+      if (Array.isArray(item))
+        nameStack.push('0');
+      else
+        nameStack.push(key1);
 
-    nameStack.pop();
+      if (item[key1] instanceof Object) {
+        moveAttributes(item[key1]);
+      } else if (shouldBeObject(item[key1])) {
+        item[key1] = {text: item[key1]};
+      }
+
+      nameStack.pop();
+    }
   });
 }
 
