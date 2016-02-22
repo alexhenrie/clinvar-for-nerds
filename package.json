@@ -17,20 +17,20 @@
   },
   "homepage": "https://github.com/alexhenrie/clinvar-visualization",
   "dependencies": {
-    "async": "^1.4.2",
-    "csv-stringify": "0.0.8",
-    "express": "^4.13.3",
-    "history": "^1.12.5",
+    "async": "^1.5.2",
+    "csv-stringify": "1.0.2",
+    "express": "^4.13.4",
+    "history": "^2.0.0",
     "jsx-loader": "^0.13.2",
-    "lodash": "^3.10.1",
-    "mongodb": "^2.0.46",
-    "mongoose": "^4.1.11",
-    "react": "^0.14.0",
-    "react-dom": "^0.14.0",
-    "react-router": "^1.0.0-rc3",
-    "superagent": "^1.4.0",
+    "lodash": "^4.5.0",
+    "mongodb": "^2.1.7",
+    "mongoose": "^4.4.4",
+    "react": "^0.14.7",
+    "react-dom": "^0.14.7",
+    "react-router": "^2.0.0",
+    "superagent": "^1.7.2",
     "xml-stream": "^0.4.5",
-    "xmldom": "^0.1.19",
-    "xpath": "0.0.9"
+    "xmldom": "^0.1.22",
+    "xpath": "0.0.21"
   }
 }

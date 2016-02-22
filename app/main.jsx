@@ -2,7 +2,7 @@ var React = require('react');
 var ReactDOM = require('react-dom');
 var Route = require('react-router').Route;
 var Router = require('react-router').Router;
-var createBrowserHistory = require('history/lib/createBrowserHistory');
+var browserHistory = require('react-router').browserHistory;
 
 var App = require('./components/app.jsx');
 var Search = require('./components/search.jsx');
@@ -15,7 +15,7 @@ var Search = require('./components/search.jsx');
 //saved in state.query.
 
 var router = (
-  <Router history={createBrowserHistory()}>
+  <Router history={browserHistory}>
     <Route component={App} path="/">
       <Route component={Search} path="search/:q"/>
     </Route>

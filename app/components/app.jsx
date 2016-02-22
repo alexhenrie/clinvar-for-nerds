@@ -1,7 +1,6 @@
 var InputGroup = require('./input-group.jsx');
 var React = require('react');
 var Router = require('react-router').Router;
-var History = require('react-router').History;
 
 var clinvarSchemaFlat = require ('../../models/clinvar-schema-flat');
 
@@ -11,9 +10,9 @@ module.exports = React.createClass({
   addRestriction : function() {
     this.refs.inputGroup.addRestriction();
   },
-  mixins: [
-    History
-  ],
+  contextTypes: {
+    router: React.PropTypes.object.isRequired
+  },
   render: function() {
     //deserialize the query
     var restrictions;
@@ -112,15 +111,18 @@ module.exports = React.createClass({
     q += '}';
 
     //change the URL fragment
-    this.history.pushState(null, '/search/' + encodeURIComponent(q), {
-      caseSensitive: this.refs.caseSensitive.checked ? 1 : undefined,
-      format:
-        this.refs.formatCsv.checked ? 'csv' :
-        this.refs.formatVcf.checked ? 'vcf' :
-        this.refs.formatJsonLd.checked ? 'json-ld' :
-        'json',
-      strip: this.refs.omitEmpty.checked ? 1 : undefined,
-      start: start,
+    this.context.router.push({
+      pathname: '/search/' + encodeURIComponent(q),
+      query: {
+        caseSensitive: this.refs.caseSensitive.checked ? 1 : undefined,
+        format:
+          this.refs.formatCsv.checked ? 'csv' :
+          this.refs.formatVcf.checked ? 'vcf' :
+          this.refs.formatJsonLd.checked ? 'json-ld' :
+          'json',
+        strip: this.refs.omitEmpty.checked ? 1 : undefined,
+        start: start,
+      }
     });
     this.forceUpdate(); //rerun the search even if the parameters have not changed
   },
