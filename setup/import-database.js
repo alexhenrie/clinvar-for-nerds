@@ -54,6 +54,21 @@ function moveAttributes(item) {
   });
 }
 
+var elementsParsed = 0;
+var elementsSaved = 0;
+var endElementParsed = false;
+
+function exitIfDone() {
+  process.stdout.cursorTo(0);
+  process.stdout.write(String(elementsSaved));
+  if (endElementParsed && elementsParsed == elementsSaved) {
+    console.log(); //move down from the status line
+    console.log('Successfully rebuilt Mongo clinvar_nerds database.');
+    console.log('Time taken: ' + ((Date.now() - startTime) / 60000).toFixed() + ' minutes');
+    process.exit();
+  }
+}
+
 var startTime = Date.now();
 
 /* The database will increase in size by several gigabytes every time it is
@@ -65,7 +80,7 @@ MongoClient.connect('mongodb://localhost:27017/clinvar_nerds', function(err, db)
   db.dropDatabase(function(err) {
     if (err) {
       console.log(err);
-      process.exit(0);
+      process.exit(1);
     } else {
       var fileStream = fs.createReadStream('ClinVarFullRelease_00-latest.xml');
       var xmlStream = new XmlStream(fileStream);
@@ -80,7 +95,7 @@ MongoClient.connect('mongodb://localhost:27017/clinvar_nerds', function(err, db)
       });
 
       var count = 0;
-      console.log('Adding ClinVarSet elements (approximately 160,000 of them)...');
+      console.log('Adding ClinVarSet elements (approximately 161,000 of them)...');
       xmlStream.on('endElement: ClinVarSet', function(item) {
         moveAttributes(item);
         var clinVarSet = new ClinVarSet(item);
@@ -91,18 +106,15 @@ MongoClient.connect('mongodb://localhost:27017/clinvar_nerds', function(err, db)
             console.log(err);
             process.exit(1);
           }
+          elementsSaved++;
+          exitIfDone();
         });
-        count++;
-        process.stdout.clearLine();
-        process.stdout.cursorTo(0);
-        process.stdout.write(String(count));
+        elementsParsed++;
       });
 
       xmlStream.on('endElement: ReleaseSet', function() {
-        console.log(); //move down from the status line
-        console.log('Successfully rebuilt Mongo clinvar_nerds database.');
-        console.log('Time taken: ' + ((Date.now() - startTime) / 60000).toFixed() + ' minutes');
-        process.exit(0);
+        endElementParsed = true;
+        exitIfDone();
       });
     }
   });
