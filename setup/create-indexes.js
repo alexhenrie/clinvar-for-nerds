@@ -97,8 +97,6 @@ console.log('Indexing ' + propertiesToIndex.length + ' properties...');
 
 MongoClient.connect('mongodb://localhost:27017/clinvar_nerds', function(err, db) {
   propertiesToIndex.forEach(function(property) {
-    if (exampleProperties[property].length < 10)
-      console.log('Warning: ' + property + ' is rarely defined and probably doesn\'t need to be indexed.');
     indexFunctions.push(indexProperty.bind(this, db, property));
   });
 
