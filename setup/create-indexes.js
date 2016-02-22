@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+"use strict";
 
 const async = require('async');
 const MongoClient = require('mongodb').MongoClient;

@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+"use strict";
 
 const async = require('async');
 const fs = require('fs');

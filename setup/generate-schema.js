@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+"use strict";
 
 const xpath = require('xpath');
 const dom = require('xmldom').DOMParser;
@@ -43,7 +44,7 @@ function findAndBuildType(type) {
 
   typeElement = select('//xs:simpleType[@name="' + type + '"]/xs:restriction/@base', doc)[0];
   if (typeElement) {
-    jsType = xsdTypeToJsType(typeElement.textContent);
+    var jsType = xsdTypeToJsType(typeElement.textContent);
     if (!jsType) {
       console.log('WARNING: Unable to convert XSD type ' + type + ' to a JS type');
       return String;
