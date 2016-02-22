@@ -41,6 +41,9 @@ MongoClient.connect('mongodb://localhost:27017/clinvar_nerds', function(err, db)
       'ReferenceClinVarAssertion.TraitSet.Trait.Name.ElementValue.text': 1,
       'ReferenceClinVarAssertion.ClinicalSignificance.Description': 1,
     }).toArray(function(err, docs) {
+      process.stderr.cursorTo(0);
+      process.stderr.clearLine();
+      process.stderr.write(linesDone + '\t' + line);
       if (err) {
         console.error(); //move down from the status line
         console.error(err);
@@ -76,10 +79,9 @@ MongoClient.connect('mongodb://localhost:27017/clinvar_nerds', function(err, db)
         });
       }
       linesDone++;
-      process.stderr.cursorTo(0);
-      process.stderr.write(String(linesDone));
       if (linesDone == lines.length) {
         process.stderr.cursorTo(0); //overwrite status line
+        process.stderr.clearLine();
         console.error('All done! Analysis took ' + ((Date.now() - startTime) / 60000).toFixed() + ' minutes.');
         process.exit();
       }
