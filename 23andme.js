@@ -30,6 +30,7 @@ MongoClient.connect('mongodb://localhost:27017/clinvar_nerds', function(err, db)
       {$match: {'ReferenceClinVarAssertion.ClinicalSignificance.Description': {$ne: 'Uncertain significance'}}},
       {$match: {'ReferenceClinVarAssertion.ClinicalSignificance.Description': {$ne: 'not provided'}}},
       {$unwind: '$ReferenceClinVarAssertion.MeasureSet.Measure'},
+      {$unwind: '$ReferenceClinVarAssertion.MeasureSet.Measure.XRef'},
       {$match: {'ReferenceClinVarAssertion.MeasureSet.Measure.XRef.Type': 'rs'}},
       {$match: {'ReferenceClinVarAssertion.MeasureSet.Measure.XRef.ID': rsIdNumber}},
       {$match: {'ReferenceClinVarAssertion.MeasureSet.Measure.SequenceLocation.alternateAllele': {$regex: '[' + cells[3] + ']'}}},
