@@ -21,26 +21,19 @@ MongoClient.connect('mongodb://localhost:27017/clinvar_nerds', function(err, db)
       return;
     }
     var rsIdNumber = cells[0].substring(2);
-    cursor.find({
-      'ReferenceClinVarAssertion.MeasureSet.Measure.XRef.Type': 'rs',
-      'ReferenceClinVarAssertion.MeasureSet.Measure.XRef.ID': rsIdNumber,
-      'ReferenceClinVarAssertion.MeasureSet.Measure.SequenceLocation.alternateAllele': {$regex: '[' + cells[3] + ']'},
-      $and: [
-        {'ReferenceClinVarAssertion.ClinicalSignificance.Description': {$ne: 'Benign'}},
-        {'ReferenceClinVarAssertion.ClinicalSignificance.Description': {$ne: 'Likely benign'}},
-        {'ReferenceClinVarAssertion.ClinicalSignificance.Description': {$ne: 'Uncertain significance'}},
-        {'ReferenceClinVarAssertion.ClinicalSignificance.Description': {$ne: 'not provided'}},
-      ],
-    }, {
-      _id: 0,
-      'ReferenceClinVarAssertion.MeasureSet.Measure.SequenceLocation.referenceAllele': 1,
-      'ReferenceClinVarAssertion.MeasureSet.Measure.SequenceLocation.alternateAllele': 1,
-      'ReferenceClinVarAssertion.MeasureSet.Measure.MeasureRelationship.Symbol.ElementValue.Type': 1,
-      'ReferenceClinVarAssertion.MeasureSet.Measure.MeasureRelationship.Symbol.ElementValue.text': 1,
-      'ReferenceClinVarAssertion.TraitSet.Trait.Name.ElementValue.Type': 1,
-      'ReferenceClinVarAssertion.TraitSet.Trait.Name.ElementValue.text': 1,
-      'ReferenceClinVarAssertion.ClinicalSignificance.Description': 1,
-    }).toArray(function(err, docs) {
+    cursor.aggregate([
+      {$match: {'ReferenceClinVarAssertion.MeasureSet.Measure.XRef.Type': 'rs'}},
+      {$match: {'ReferenceClinVarAssertion.MeasureSet.Measure.XRef.ID': rsIdNumber}},
+      {$match: {'ReferenceClinVarAssertion.MeasureSet.Measure.SequenceLocation.alternateAllele': {$regex: '[' + cells[3] + ']'}}},
+      {$match: {'ReferenceClinVarAssertion.ClinicalSignificance.Description': {$ne: 'Benign'}}},
+      {$match: {'ReferenceClinVarAssertion.ClinicalSignificance.Description': {$ne: 'Likely benign'}}},
+      {$match: {'ReferenceClinVarAssertion.ClinicalSignificance.Description': {$ne: 'Uncertain significance'}}},
+      {$match: {'ReferenceClinVarAssertion.ClinicalSignificance.Description': {$ne: 'not provided'}}},
+      {$unwind: '$ReferenceClinVarAssertion.MeasureSet.Measure'},
+      {$match: {'ReferenceClinVarAssertion.MeasureSet.Measure.XRef.Type': 'rs'}},
+      {$match: {'ReferenceClinVarAssertion.MeasureSet.Measure.XRef.ID': rsIdNumber}},
+      {$match: {'ReferenceClinVarAssertion.MeasureSet.Measure.SequenceLocation.alternateAllele': {$regex: '[' + cells[3] + ']'}}},
+    ]).toArray(function(err, docs) {
       process.stderr.cursorTo(0);
       process.stderr.clearLine();
       process.stderr.write(linesDone + '\t' + line);
@@ -57,7 +50,7 @@ MongoClient.connect('mongodb://localhost:27017/clinvar_nerds', function(err, db)
               }
             });
           });
-          var measure = doc.ReferenceClinVarAssertion.MeasureSet.Measure[0];
+          var measure = doc.ReferenceClinVarAssertion.MeasureSet.Measure;
           var referenceAllele = measure.SequenceLocation[0].referenceAllele;
           var alternateAllele = measure.SequenceLocation[0].alternateAllele;
           var geneSymbol = '';
@@ -69,13 +62,14 @@ MongoClient.connect('mongodb://localhost:27017/clinvar_nerds', function(err, db)
               }
             }
           }
+          var significance = doc.ReferenceClinVarAssertion.ClinicalSignificance.Description;
           process.stderr.cursorTo(0); //overwrite status line
           console.log(
             cells[0] + '\t' +
             geneSymbol + '\t' +
             referenceAllele + '>' + alternateAllele + '\t' +
             cells[3] + '\t' +
-            doc.ReferenceClinVarAssertion.ClinicalSignificance.Description + '\t' +
+            significance + '\t' +
             traits.join('; ')
           );
         });
