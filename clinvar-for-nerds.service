@@ -1,0 +1,13 @@
+[Unit]
+Description=ClinVar for Nerds
+
+[Service]
+ExecStart=/usr/bin/env node /opt/clinvar-for-nerds/clinvar-for-nerds.js
+Restart=always
+RestartSec=10
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=clinvar-for-nerds
+
+[Install]
+WantedBy=multi-user.target

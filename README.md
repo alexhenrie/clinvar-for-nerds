@@ -2,11 +2,15 @@
 ClinVar for Nerds is a web-based interface to query ClinVar data and download it
 in JSON or CSV format.
 
-## Getting started
-1. ./setup.sh
+## Production
+1. make db
+2. sudo make install
+
+## Development
+1. make db
 2. sudo npm install -g webpack
-3. webpack (add -wd for development)
-4. node index.js (or node-dev index.js)
+3. webpack -wd
+4. node-dev clinvar-for-nerds.js
 
 ## License
 Copyright (c) 2015, Alex Henrie
