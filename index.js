@@ -4,7 +4,6 @@
 var express = require('express');
 var app = express();
 var clinvarDates = require('./models/clinvar-dates.js');
-var ClinVarSet = require('./models/clinvarset.js');
 var csvStringify = require('csv-stringify');
 var MongoClient = require('mongodb').MongoClient;
 const RECORDS_PER_PAGE = require('./records-per-page');
