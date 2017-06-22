@@ -19,5 +19,5 @@ install:
 
 uninstall:
 	rm -rf /opt/clinvar-for-nerds
-	rm /etc/systemd/system/clinvar-for-nerds.service
-	rm /etc/cron.monthly/clinvar-for-nerds-update.sh
+	rm -f /etc/systemd/system/clinvar-for-nerds.service
+	rm -f /etc/cron.monthly/clinvar-for-nerds-update.sh
